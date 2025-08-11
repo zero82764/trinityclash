@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity Clash</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            background-color: #3a3a3a;
+            background-image: linear-gradient(45deg, rgba(0,0,0,0.2) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.2) 75%), 
+                              linear-gradient(45deg, rgba(0,0,0,0.2) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.2) 75%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            font-family: 'MedievalSharp', cursive;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        // ===================================
+        //  🎨 1. CONFIGURATION & CONSTANTS
+        // ===================================
+        const COLORS = {
+            background: '#3a3a3a',
+            text: '#EAE0C8',
+            cardBorder: '#1a1a1a',
+            might: '#8C1C13', // Deep Red
+            finesse: '#225749', // Forest Green
+            magic: '#394A6B', // Deep Blue
+            accent: '#D4AF37', // Gold
+            disabled: '#5a5a5a',
+            button: '#6b4f3a', // Wood Brown
+            buttonBorder: '#3b2c21' // Dark Wood
+        };
+
+        const HEROES = [
+            // Might Heroes
+            { id: 0, name: 'Sir Reginald', type: 'Might', hp: 10, ap: 4, abilityId: 'lastStand', description: 'Last Stand: If knocked out, survives with 1 HP (once per game).' },
+            { id: 1, name: 'Grak the Crusher', type: 'Might', hp: 8, ap: 6, abilityId: 'crush', description: 'Crush: His attacks ignore all damage reduction effects.' },
+            { id: 6, name: 'Boro the Bulwark', type: 'Might', hp: 10, ap: 4, abilityId: 'tank', description: 'Tank: Boro absorbs all damage for his allies.' },
+            { id: 9, name: 'Skeleton Warrior', type: 'Might', hp: 10, ap: 4, abilityId: null, description: 'A sturdy and reliable frontline soldier.' },
+            { id: 12, name: 'Goblin Brawler', type: 'Might', hp: 9, ap: 5, abilityId: 'mobRule', description: 'Mob Rule: Gains +1 AP for each other living Goblin ally.' },
+
+            // Finesse Heroes
+            { id: 2, name: 'Vex', type: 'Finesse', hp: 7, ap: 7, abilityId: 'firstStrike', description: 'First Strike: Attacks first. If she defeats the opponent, she takes no damage.' },
+            { id: 3, name: 'Kaelen', type: 'Finesse', hp: 7, ap: 7, abilityId: 'longBow', description: 'Long Bow: Every other round, deals 2 damage to a random enemy.' },
+            { id: 7, name: 'Lyra Nightwind', type: 'Finesse', hp: 8, ap: 6, abilityId: 'smokeBomb', description: 'Smoke Bomb: The first attack against Lyra misses.' },
+            { id: 10, name: 'Skeleton Archer', type: 'Finesse', hp: 7, ap: 7, abilityId: null, description: 'A balanced archer with no special tricks.' },
+            { id: 13, name: 'Goblin Cutpurse', type: 'Finesse', hp: 7, ap: 7, abilityId: 'ambush', description: 'Ambush: Deals 2 damage to the clashing enemy when on the bench.' },
+
+            // Magic Heroes
+            { id: 4, name: 'Elara', type: 'Magic', hp: 6, ap: 8, abilityId: 'soulSiphon', description: 'Soul Siphon: The first time Elara defeats an enemy, she gains their max HP.' },
+            { id: 5, name: 'Zoltan', type: 'Magic', hp: 5, ap: 9, abilityId: 'overload', description: 'Overload: 50% chance to deal 4 damage to another random enemy or himself.' },
+            { id: 8, name: 'Master Theron', type: 'Magic', hp: 7, ap: 7, abilityId: 'fireball', description: 'Fireball: On round 5, deals 5 damage to all enemies.' },
+            { id: 11, name: 'Skeleton Mage', type: 'Magic', hp: 4, ap: 10, abilityId: null, description: 'A frail but powerful spellcaster.' },
+            { id: 14, name: 'Goblin Bomber', type: 'Magic', hp: 4, ap: 10, abilityId: 'unstableConcoction', description: 'Unstable Concoction: With advantage, explodes, dealing 3 damage to all enemies.' }
+        ];
+
+        const BOSSES = [
+            { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
+        ];
+
+        // ===================================
+        //  ⚔️ 2. GAME CLASS
+        // ===================================
+        class Game {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.scale = 1;
+                this.baseWidth = 1920;
+                this.baseHeight = 1080;
+                this.baseCardWidth = 160;
+                this.baseCardHeight = 240;
+                
+                this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.buttonHitboxes = {};
+
+                this.state = this.getInitialState();
+
+                this.init();
+            }
+
+            // -----------------------------------
+            //  Initialization
+            // -----------------------------------
+            init() {
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.gameLoop();
+            }
+
+            getInitialState() {
+                return {
+                    gamePhase: 'mainMenu', // mainMenu, difficultySelection, heroSelection, practiceSelection, heroViewer, playing, gameOver, expertVictory, bossBattle
+                    difficulty: 'normal',
+                    teamSize: 3,
+                    player1Team: [],
+                    player2Team: [],
+                    player1Selection: null,
+                    player2Selection: null,
+                    winner: null,
+                    isClashing: false,
+                    pendingClash: null,
+                    animation: null,
+                    impactAnimation: null,
+                    fireballAnimation: null,
+                    overloadAnimation: null,
+                    round: 1,
+                    heroViewerIndex: 0,
+                    practiceSelectionState: 'player', // 'player' or 'opponent'
+                    hoveredHero: null,
+                    abilityAnimations: [],
+                    battleLog: [],
+                    confettiParticles: [],
+                    bossActiveAbility: null,
+                };
+            }
+            
+            resetGame() {
+                this.state = this.getInitialState();
+                this.log('Welcome to Trinity Clash! Select a hero to begin.');
+            }
+
+            startBossBattle() {
+                this.state.teamSize = 5; // Player has 5 heroes for boss battle
+                if (this.state.player1Team.length !== this.state.teamSize) {
+                    this.state.gamePhase = 'heroSelection'; // Go to hero selection if team not ready
+                    return;
+                }
+                this.state.player2Team = [JSON.parse(JSON.stringify(BOSSES[0]))]; // Load the Minotaur
+                this.state.gamePhase = 'bossBattle';
+                this.log('BOSS BATTLE! The Minotaur appears!');
+                this.log('Select a hero to face the beast.');
+            }
+
+            startGame(isPractice = false) {
+                if (this.state.player1Team.length !== this.state.teamSize) return;
+
+                if (!isPractice) {
+                    const deepCopyHeroes = JSON.parse(JSON.stringify(HEROES));
+                    
+                    if (this.state.difficulty === 'easy') {
+                        this.state.player2Team = deepCopyHeroes.filter(hero => 
+                            hero.name.includes('Skeleton')
+                        ).slice(0, this.state.teamSize);
+                    } else { // This block is for Normal and Expert
+                        const playerHeroIds = this.state.player1Team.map(h => h.id);
+                        let remainingHeroes = deepCopyHeroes.filter(hero => !playerHeroIds.includes(hero.id));
+
+                        if (this.state.difficulty === 'expert') {
+                            // Expert AI: Choose heroes to counter the player's team
+                            const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
+                            this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
+
+                            const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
+                            
+                            // Create a prioritized list of hero types for the AI to pick
+                            const typePriority = Object.keys(playerTypes)
+                                .sort((a, b) => playerTypes[b] - playerTypes[a]) // Sort by player's most frequent types
+                                .map(type => counterType[type]); // Map to their counters
+
+                            this.state.player2Team = [];
+                            const pickedIds = new Set();
+
+                            for (let i = 0; i < this.state.teamSize; i++) {
+                                let pickedHero = null;
+                                // Try to pick from the prioritized types
+                                for (const type of typePriority) {
+                                    const availableCounterHeroes = remainingHeroes.filter(h => h.type === type && !pickedIds.has(h.id));
+                                    if (availableCounterHeroes.length > 0) {
+                                        pickedHero = availableCounterHeroes[Math.floor(Math.random() * availableCounterHeroes.length)];
+                                        break;
+                                    }
+                                }
+                                // If no ideal counters are left, pick a random hero from what's remaining
+                                if (!pickedHero) {
+                                     const trulyRemaining = remainingHeroes.filter(h => !pickedIds.has(h.id));
+                                     if(trulyRemaining.length > 0) {
+                                        pickedHero = trulyRemaining[Math.floor(Math.random() * trulyRemaining.length)];
+                                     }
+                                }
+                                
+                                if(pickedHero) {
+                                    this.state.player2Team.push(pickedHero);
+                                    pickedIds.add(pickedHero.id);
+                                }
+                            }
+
+                        } else { // Normal Mode: Pick random heroes
+                            for (let i = remainingHeroes.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [remainingHeroes[i], remainingHeroes[j]] = [remainingHeroes[j], remainingHeroes[i]];
+                            }
+                            this.state.player2Team = remainingHeroes.slice(0, this.state.teamSize);
+                        }
+                    }
+                }
+                
+                this.state.gamePhase = 'playing';
+                this.log(`Game Start! Round ${this.state.round}.`);
+                this.log('Select one of your heroes to clash.');
+            }
+
+            // -----------------------------------
+            //  Game Loop & Drawing
+            // -----------------------------------
+            gameLoop() {
+                this.update();
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+            
+            update() {
+                const speedMultiplier = 0.25; // Slow down all animations
+
+                if (this.state.animation) {
+                    const anim = this.state.animation;
+                    anim.progress += anim.speed; // Speed is already adjusted at creation
+                    if (anim.progress >= 1) {
+                        anim.progress = 1;
+                        if (anim.onComplete) anim.onComplete();
+                        this.state.animation = null;
+                    }
+                }
+                
+                if (this.state.impactAnimation) {
+                    this.state.impactAnimation.progress += 0.05 * speedMultiplier;
+                    if (this.state.impactAnimation.progress >= 1) {
+                        this.state.impactAnimation = null;
+                    }
+                }
+
+                if (this.state.fireballAnimation) {
+                    this.state.fireballAnimation.progress += 0.025 * speedMultiplier;
+                    if (this.state.fireballAnimation.progress >= 1) {
+                        this.state.fireballAnimation = null;
+                    }
+                }
+
+                if (this.state.overloadAnimation) {
+                    this.state.overloadAnimation.progress += 0.075 * speedMultiplier;
+                    if (this.state.overloadAnimation.progress >= 1) {
+                        this.state.overloadAnimation = null;
+                    }
+                }
+                
+                this.state.abilityAnimations.forEach(anim => anim.progress += anim.speed);
+                this.state.abilityAnimations = this.state.abilityAnimations.filter(anim => anim.progress < 1);
+
+                this.state.player1Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
+                this.state.player2Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
+                
+                if (this.state.gamePhase === 'expertVictory') {
+                    this.state.confettiParticles.forEach(p => {
+                        p.y += p.speed;
+                        p.angle += p.rotationSpeed;
+                        if (p.y > this.canvas.height) {
+                            p.y = -p.height; // Reset to the top
+                            p.x = Math.random() * this.canvas.width;
+                        }
+                    });
+                }
+            }
+            
+            updateHeroAnimation(hero, speedMultiplier) {
+                if (hero.deathAnimation && hero.deathAnimation.progress < 1) {
+                    hero.deathAnimation.progress += 0.0075 * speedMultiplier; 
+                    if (hero.deathAnimation.progress > 1) {
+                        hero.deathAnimation.progress = 1;
+                    }
+                }
+            }
+
+            draw() {
+                this.ctx.fillStyle = COLORS.background;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.buttonHitboxes = {};
+
+                switch(this.state.gamePhase) {
+                    case 'mainMenu':
+                        this.drawMainMenuScreen();
+                        break;
+                    case 'difficultySelection':
+                        this.drawDifficultySelectionScreen();
+                        break;
+                    case 'heroSelection':
+                        this.drawHeroSelectionScreen();
+                        break;
+                    case 'practiceSelection':
+                        this.drawPracticeSelectionScreen();
+                        break;
+                    case 'heroViewer':
+                        this.drawHeroViewerScreen();
+                        break;
+                    case 'playing':
+                    case 'bossBattle':
+                        this.drawPlayingScreen();
+                        break;
+                    case 'gameOver':
+                        this.drawGameOver();
+                        break;
+                    case 'expertVictory':
+                        this.drawExpertVictoryScreen();
+                        break;
+                }
+
+                if (this.state.hoveredHero) {
+                    const { x, y, hero, team } = this.state.hoveredHero;
+                    this.drawCard(x, y, hero, 'hover', team, 1.5);
+                }
+            }
+
+            drawPlayingScreen() {
+                this.drawBattleLog();
+                this.drawTeam(this.state.player2Team, 'player2');
+                this.drawTeam(this.state.player1Team, 'player1');
+                
+                this.initiateClashAnimation();
+                this.drawClashButton();
+                this.drawBackButton();
+                
+                if (this.state.animation && this.state.animation.type === 'clash') {
+                    this.drawClashAnimation();
+                } 
+                
+                if (this.state.impactAnimation) {
+                    this.drawImpactAnimation();
+                }
+
+                if (this.state.fireballAnimation) {
+                    this.drawFireballAnimation();
+                }
+
+                if (this.state.overloadAnimation) {
+                    this.drawOverloadAnimation();
+                }
+
+                this.state.abilityAnimations.forEach(anim => {
+                    if(anim.type === 'smokeBomb') this.drawSmokeBombAnimation(anim);
+                    if(anim.type === 'longBow') this.drawLongBowAnimation(anim);
+                    if(anim.type === 'ambush') this.drawAmbushAnimation(anim);
+                    if(anim.type === 'lastStand') this.drawLastStandAnimation(anim);
+                    if(anim.type === 'cleave') this.drawCleaveAnimation(anim);
+                    if(anim.type === 'intimidation') this.drawIntimidationAnimation(anim);
+                });
+
+                this.drawRoundCounter();
+            }
+
+            // -----------------------------------
+            //  Drawing Helpers
+            // -----------------------------------
+
+            wrapText(text, x, y, maxWidth, lineHeight) {
+                const words = text.split(' ');
+                let line = '';
+                this.ctx.textAlign = 'center';
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + ' ';
+                    const metrics = this.ctx.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        this.ctx.fillText(line, x, y);
+                        line = words[n] + ' ';
+                        y += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                }
+                this.ctx.fillText(line, x, y);
+            }
+            
+            drawBattleLog() {
+                const logWidth = 300 * this.scale;
+                const x = 10 * this.scale;
+                const y = 10 * this.scale;
+                const width = logWidth - (20 * this.scale);
+                const height = this.canvas.height - (20 * this.scale);
+
+                // Draw background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                this.ctx.fillRect(x, y, width, height);
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.lineWidth = 2 * this.scale;
+                this.ctx.strokeRect(x, y, width, height);
+
+                // Draw title
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.font = `bold ${24 * this.scale}px 'Cinzel'`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Battle Log', x + width / 2, y + 35 * this.scale);
+
+                // Draw log entries
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `${15 * this.scale}px 'MedievalSharp'`;
+                this.ctx.textAlign = 'left';
+                const logYStart = y + 70 * this.scale;
+                const lineHeight = 20 * this.scale;
+                const padding = 10 * this.scale;
+
+                this.state.battleLog.forEach((entry, index) => {
+                    const logY = logYStart + index * lineHeight;
+                    if (logY > y + height - padding) return; // Don't draw off the bottom
+                    this.ctx.fillText(`- ${entry}`, x + padding, logY);
+                });
+            }
+
+            drawTeam(team, playerKey) {
+                const isBoss = team.length === 1 && team[0].abilities;
+                const cardScaleFactor = isBoss ? 1.5 : (this.state.teamSize === 5 ? 0.8 : 1);
+                const cardWidth = this.baseCardWidth * this.scale * cardScaleFactor;
+                const cardHeight = this.baseCardHeight * this.scale * cardScaleFactor;
+                const spacing = 20 * this.scale * cardScaleFactor;
+                const logWidth = 300 * this.scale;
+
+                const teamSize = team.length;
+                const totalWidth = teamSize * cardWidth + (teamSize - 1) * spacing;
+                const availableWidth = this.canvas.width - logWidth;
+                const startX = logWidth + (availableWidth - totalWidth) / 2;
+                const y = playerKey === 'player1' ? this.canvas.height - cardHeight - (50 * this.scale) : (80 * this.scale);
+                
+                const title = playerKey === 'player1' ? "Your Team" : (isBoss ? "THE MINOTAUR" : "Opponent's Team");
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px 'Cinzel'`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(title, startX + totalWidth / 2, y - (15 * this.scale));
+
+                team.forEach((hero, index) => {
+                    const x = startX + index * (cardWidth + spacing);
+                    
+                    const hitbox = { x, y, width: cardWidth, height: cardHeight, hero };
+                    this.cardHitboxes[playerKey].push(hitbox);
+                    
+                    const isAnimating = this.state.animation && this.state.animation.type === 'clash' &&
+                                        (this.state.animation.p1.id === hero.id || this.state.animation.p2.id === hero.id);
+
+                    if (!isAnimating) {
+                        this.drawCard(x, y, hero, playerKey, team, cardScaleFactor);
+                    }
+                });
+            }
+
+            drawCard(x, y, hero, playerKey, team = [], customScale = 1) {
+                this.ctx.save();
+                
+                const cardWidth = this.baseCardWidth * this.scale * customScale;
+                const cardHeight = this.baseCardHeight * this.scale * customScale;
+                const padding = 10 * this.scale * customScale;
+
+                if (hero.deathAnimation) {
+                    const angle = (Math.PI / 2) * hero.deathAnimation.progress;
+                    this.ctx.translate(x + cardWidth / 2, y + cardHeight / 2);
+                    this.ctx.rotate(angle);
+                    this.ctx.translate(-(x + cardWidth / 2), -(y + cardHeight / 2));
+                }
+
+                if (hero.hp <= 0) {
+                    const deathProgress = hero.deathAnimation ? hero.deathAnimation.progress : 1;
+                    this.ctx.globalAlpha = 1 - (0.6 * deathProgress);
+                    this.ctx.fillStyle = COLORS.disabled;
+                } else {
+                    this.ctx.globalAlpha = 1.0;
+                    this.ctx.fillStyle = COLORS[hero.type.toLowerCase()];
+                }
+                this.ctx.fillRect(x, y, cardWidth, cardHeight);
+
+                this.ctx.globalAlpha = 1.0;
+
+                const isP1Selected = this.state.player1Selection && this.state.player1Selection.id === hero.id;
+                const isP2Selected = this.state.player2Selection && this.state.player2Selection.id === hero.id;
+                
+                let isTeamSelected = false;
+                if (this.state.gamePhase === 'heroSelection') {
+                    isTeamSelected = this.state.player1Team.some(h => h.id === hero.id);
+                } else if (this.state.gamePhase === 'practiceSelection') {
+                    const currentTeam = this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team;
+                    isTeamSelected = currentTeam.some(h => h.id === hero.id);
+                }
+
+
+                if ((isP1Selected || isP2Selected || isTeamSelected) && hero.hp > 0) {
+                    this.ctx.strokeStyle = COLORS.accent;
+                    this.ctx.lineWidth = 6 * this.scale * customScale;
+                } else {
+                    this.ctx.strokeStyle = COLORS.cardBorder;
+                    this.ctx.lineWidth = 4 * this.scale * customScale;
+                }
+                this.ctx.strokeRect(x, y, cardWidth, cardHeight);
+
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+
+                this.ctx.font = `bold ${22 * this.scale * customScale}px 'Cinzel'`;
+                this.ctx.fillText(hero.name, x + cardWidth / 2, y + (30 * this.scale * customScale));
+                
+                const currentAP = this.getHeroCurrentAP(hero, team);
+                
+                let statNumberSize = 24;
+                let statLabelSize = 16;
+                let descriptionSize = 13;
+
+                if (customScale > 1) {
+                    statNumberSize = 20;
+                    statLabelSize = 12;
+                    descriptionSize = 18;
+                }
+
+                this.ctx.font = `bold ${statNumberSize * this.scale * customScale}px 'MedievalSharp'`;
+                this.ctx.fillText(`${hero.hp}`, x + cardWidth / 4, y + (65 * this.scale * customScale));
+                this.ctx.fillText(`${currentAP}`, x + cardWidth * 3 / 4, y + (65 * this.scale * customScale));
+
+                this.ctx.font = `${statLabelSize * this.scale * customScale}px 'Cinzel'`;
+                this.ctx.fillText(`HP`, x + cardWidth / 4, y + (85 * this.scale * customScale));
+                this.ctx.fillText(`AP`, x + cardWidth * 3 / 4, y + (85 * this.scale * customScale));
+
+                this.ctx.font = `italic ${descriptionSize * this.scale * customScale}px 'MedievalSharp'`;
+                this.wrapText(hero.description || '', x + cardWidth / 2, y + (120 * this.scale * customScale), cardWidth - padding * 2, 15 * this.scale * customScale);
+
+
+                this.ctx.font = `bold ${18 * this.scale * customScale}px 'Cinzel'`;
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.fillText(hero.type.toUpperCase(), x + cardWidth / 2, y + cardHeight - (20 * this.scale * customScale));
+
+                this.ctx.restore();
+            }
+            
+            drawClashAnimation() {
+                const anim = this.state.animation;
+                if (!anim) return;
+
+                const { p1, p2, p1StartPos, p2StartPos } = anim;
+                const cardWidth = this.baseCardWidth * this.scale;
+                const cardHeight = this.baseCardHeight * this.scale;
+
+                const p1MeetX = this.canvas.width / 2 - cardWidth;
+                const p1MeetY = this.canvas.height / 2 - cardHeight / 2;
+                const p2MeetX = this.canvas.width / 2;
+                const p2MeetY = this.canvas.height / 2 - cardHeight / 2;
+
+                let p1CurrentX, p1CurrentY, p2CurrentX, p2CurrentY;
+                const rawProgress = anim.progress;
+
+                if (rawProgress < 0.5) {
+                    const phaseProgress = rawProgress / 0.5;
+                    const easeOut = t => t * (2 - t);
+                    p1CurrentX = p1StartPos.x + (p1MeetX - p1StartPos.x) * easeOut(phaseProgress);
+                    p1CurrentY = p1StartPos.y + (p1MeetY - p1StartPos.y) * easeOut(phaseProgress);
+                    p2CurrentX = p2StartPos.x + (p2MeetX - p2StartPos.x) * easeOut(phaseProgress);
+                    p2CurrentY = p2StartPos.y + (p2MeetY - p2StartPos.y) * easeOut(phaseProgress);
+                } else {
+                    p1CurrentX = p1MeetX;
+                    p1CurrentY = p1MeetY;
+                    p2CurrentX = p2MeetX;
+                    p2CurrentY = p2MeetY;
+
+                    const lungePhaseProgress = (rawProgress - 0.5) / 0.5;
+                    const lungeFactor = Math.sin(lungePhaseProgress * Math.PI);
+                    const lungeDistance = 50 * this.scale * lungeFactor;
+
+                    p1CurrentX += lungeDistance;
+                    p2CurrentX -= lungeDistance;
+                    
+                    if (lungePhaseProgress > 0.45 && lungePhaseProgress < 0.55 && !anim.impactTriggered) {
+                        anim.impactTriggered = true;
+                        this.triggerImpact();
+                        this.calculateClashResult(p1, p2);
+                    }
+                }
+
+                this.drawCard(p1CurrentX, p1CurrentY, p1, 'player1', this.state.player1Team);
+                this.drawCard(p2CurrentX, p2CurrentY, p2, 'player2', this.state.player2Team, 1.5);
+            }
+
+            drawImpactAnimation() {
+                const anim = this.state.impactAnimation;
+                if (!anim) return;
+
+                const progress = anim.progress;
+                const flash = Math.sin(progress * Math.PI);
+
+                this.ctx.save();
+                this.ctx.translate(anim.x, anim.y);
+                this.ctx.strokeStyle = COLORS.accent;
+                this.ctx.globalAlpha = flash;
+                this.ctx.lineWidth = (15 * (1 - progress)) * this.scale;
+
+                const numSpikes = 12;
+                for (let i = 0; i < numSpikes; i++) {
+                    const angle = (i / numSpikes) * (2 * Math.PI);
+                    const startRadius = anim.radius * 0.3;
+                    const endRadius = anim.radius;
+                    
+                    const startX = Math.cos(angle) * startRadius;
+                    const startY = Math.sin(angle) * startRadius;
+                    const endX = Math.cos(angle) * endRadius;
+                    const endY = Math.sin(angle) * endRadius;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+                    this.ctx.lineTo(endX, endY);
+                    this.ctx.stroke();
+                }
+                this.ctx.restore();
+            }
+
+            drawFireballAnimation() {
+                const anim = this.state.fireballAnimation;
+                if (!anim) return;
+
+                const cardWidth = this.baseCardWidth * this.scale;
+                const cardHeight = this.baseCardHeight * this.scale;
+                const numTargets = this.cardHitboxes[anim.targetTeamKey].length;
+
+                this.cardHitboxes[anim.targetTeamKey].forEach((hitbox, index) => {
+                    const explosionProgress = Math.max(0, (anim.progress - (index * 0.2)) / (1 - (index * 0.2)));
+                    if (explosionProgress > 0) {
+                        const flash = Math.sin(explosionProgress * Math.PI);
+                        const centerX = hitbox.x + cardWidth / 2;
+                        const centerY = hitbox.y + cardHeight / 2;
+                        
+                        this.ctx.save();
+                        this.ctx.globalAlpha = flash;
+                        this.ctx.fillStyle = COLORS.accent;
+                        this.ctx.beginPath();
+                        this.ctx.arc(centerX, centerY, (cardWidth * 0.75) * flash, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.restore();
+                    }
+                });
+            }
+
+            drawOverloadAnimation() {
+                const anim = this.state.overloadAnimation;
+                if (!anim) return;
+
+                const progress = anim.progress;
+                const flash = Math.sin(progress * Math.PI);
+
+                this.ctx.save();
+                this.ctx.strokeStyle = COLORS.accent;
+                this.ctx.lineWidth = 5 * this.scale * flash;
+                this.ctx.globalAlpha = flash;
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(anim.startX, anim.startY);
+                const dx = anim.endX - anim.startX;
+                const dy = anim.endY - anim.startY;
+                for (let i = 0; i < 1; i += 0.1) {
+                    const x = anim.startX + dx * i;
+                    const y = anim.startY + dy * i;
+                    const randomOffset = (Math.random() - 0.5) * 60 * this.scale;
+                    this.ctx.lineTo(x + randomOffset, y + randomOffset);
+                }
+                this.ctx.lineTo(anim.endX, anim.endY);
+                this.ctx.stroke();
+
+                this.ctx.restore();
+            }
+
+            drawLastStandAnimation(anim) {
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.hero.id);
+                if (!heroBox) return;
+
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI); // Fade in and out
+                const radius = heroBox.width * (1 + progress);
+
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.strokeStyle = COLORS.accent;
+                this.ctx.lineWidth = 10 * this.scale * (1 - progress);
+                this.ctx.beginPath();
+                this.ctx.arc(heroBox.x + heroBox.width / 2, heroBox.y + heroBox.height / 2, radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.restore();
+            }
+
+            drawSmokeBombAnimation(anim) {
+                 const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.hero.id);
+                if (!heroBox) return;
+
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.fillStyle = '#aaaaaa';
+                for(let i = 0; i < 5; i++) {
+                    const xOffset = (Math.random() - 0.5) * heroBox.width * progress;
+                    const yOffset = (Math.random() - 0.5) * heroBox.height * progress;
+                    const radius = heroBox.width / 2 * (1 - progress) * (Math.random() * 0.5 + 0.5);
+                    this.ctx.beginPath();
+                    this.ctx.arc(heroBox.x + heroBox.width / 2 + xOffset, heroBox.y + heroBox.height / 2 + yOffset, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+                this.ctx.restore();
+            }
+
+            drawLongBowAnimation(anim) {
+                const progress = anim.progress;
+                const easeOut = t => 1 - Math.pow(1 - t, 3);
+                const currentX = anim.startX + (anim.endX - anim.startX) * easeOut(progress);
+                const currentY = anim.startY + (anim.endY - anim.startY) * easeOut(progress);
+                const angle = Math.atan2(anim.endY - anim.startY, anim.endX - anim.startX);
+
+                this.ctx.save();
+                this.ctx.translate(currentX, currentY);
+                this.ctx.rotate(angle);
+
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.lineWidth = 4 * this.scale;
+
+                // Arrowhead
+                this.ctx.beginPath();
+                this.ctx.moveTo(20 * this.scale, 0);
+                this.ctx.lineTo(-10 * this.scale, -10 * this.scale);
+                this.ctx.lineTo(-10 * this.scale, 10 * this.scale);
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Shaft
+                this.ctx.beginPath();
+                this.ctx.moveTo(-10 * this.scale, 0);
+                this.ctx.lineTo(-50 * this.scale, 0);
+                this.ctx.stroke();
+
+                this.ctx.restore();
+            }
+
+            drawAmbushAnimation(anim) {
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.target.id);
+                if (!heroBox) return;
+
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                const length = heroBox.width * 2.4 * Math.sin(progress * Math.PI * 0.5); // slash grows and shrinks
+
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.strokeStyle = COLORS.might;
+                this.ctx.lineWidth = 16 * this.scale;
+                this.ctx.translate(heroBox.x + heroBox.width / 2, heroBox.y + heroBox.height / 2);
+                this.ctx.rotate(-Math.PI / 4);
+
+                this.ctx.beginPath();
+                this.ctx.moveTo(-length / 2, 0);
+                this.ctx.lineTo(length / 2, 0);
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+
+            drawCleaveAnimation(anim) {
+                const bossBox = this.cardHitboxes.player2[0];
+                if (!bossBox) return;
+                
+                const progress = anim.progress;
+                const arcProgress = Math.sin(progress * Math.PI * 0.5);
+
+                this.ctx.save();
+                this.ctx.strokeStyle = COLORS.might;
+                this.ctx.lineWidth = 15 * this.scale;
+                this.ctx.globalAlpha = Math.sin(progress * Math.PI);
+
+                const radius = this.canvas.width * 0.4 * arcProgress;
+                this.ctx.beginPath();
+                this.ctx.arc(bossBox.x + bossBox.width / 2, bossBox.y + bossBox.height / 2, radius, Math.PI * 0.7, Math.PI * 1.3);
+                this.ctx.stroke();
+                
+                this.ctx.restore();
+            }
+
+            drawIntimidationAnimation(anim) {
+                const bossBox = this.cardHitboxes.player2[0];
+                if (!bossBox) return;
+
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                const radius = bossBox.width * (0.5 + progress);
+
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity * 0.5;
+                this.ctx.fillStyle = '#333333';
+                this.ctx.beginPath();
+                this.ctx.arc(bossBox.x + bossBox.width / 2, bossBox.y + bossBox.height / 2, radius, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
+
+
+            drawClashButton() {
+                if (!this.state.player1Selection || this.state.isClashing || this.state.winner) return;
+
+                const buttonWidth = 200 * this.scale;
+                const buttonHeight = 60 * this.scale;
+                const logWidth = 300 * this.scale;
+                const x = logWidth + (this.canvas.width - logWidth - buttonWidth) / 2;
+                const y = (this.canvas.height - buttonHeight) / 2;
+                
+                this.buttonHitboxes.clash = { x, y, width: buttonWidth, height: buttonHeight };
+
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.cardBorder;
+                this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('CLASH!', x + buttonWidth / 2, y + buttonHeight / 2);
+                this.ctx.textBaseline = 'alphabetic';
+            }
+
+            drawBackButton() {
+                const buttonWidth = 200 * this.scale;
+                const buttonHeight = 60 * this.scale;
+                const x = this.canvas.width - buttonWidth - (20 * this.scale);
+                const y = 20 * this.scale;
+                this.buttonHitboxes.backToMenu = { x, y, width: buttonWidth, height: buttonHeight };
+
+                this.ctx.fillStyle = COLORS.might;
+                this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.lineWidth = 4 * this.scale;
+                this.ctx.strokeRect(x, y, buttonWidth, buttonHeight);
+
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${24 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('Main Menu', x + buttonWidth / 2, y + buttonHeight / 2);
+                this.ctx.textBaseline = 'alphabetic'; // Reset baseline
+            }
+
+            drawRoundCounter() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                const logWidth = 300 * this.scale;
+                const x = logWidth + (this.canvas.width - logWidth) / 2;
+                this.ctx.fillText(`Round ${this.state.round}`, x, 40 * this.scale);
+            }
+
+            drawGameOver() {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.font = `bold ${60 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                const message = this.state.winner === 'p1' ? 'VICTORY!' : 'DEFEAT';
+                this.ctx.fillText(message, this.canvas.width / 2, this.canvas.height / 2 - (100 * this.scale));
+
+                const buttonWidth = 250 * this.scale;
+                const buttonHeight = 70 * this.scale;
+                const x = (this.canvas.width - buttonWidth) / 2;
+                const y = this.canvas.height / 2;
+                this.buttonHitboxes.playAgain = { x, y, width: buttonWidth, height: buttonHeight };
+
+                this.ctx.fillStyle = COLORS.finesse;
+                this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('Main Menu', x + buttonWidth / 2, y + buttonHeight / 2);
+                this.ctx.textBaseline = 'alphabetic';
+            }
+
+            drawExpertVictoryScreen() {
+                // Draw background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw confetti
+                this.state.confettiParticles.forEach(p => {
+                    this.ctx.save();
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.translate(p.x, p.y);
+                    this.ctx.rotate(p.angle);
+                    this.ctx.fillRect(-p.width / 2, -p.height / 2, p.width, p.height);
+                    this.ctx.restore();
+                });
+
+                // Draw the special text over the confetti
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.shadowColor = '#000';
+                this.ctx.shadowBlur = 15;
+                this.ctx.font = `bold ${70 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('EXPERT VICTORY!', this.canvas.width / 2, this.canvas.height / 2 - 50 * this.scale);
+                
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillText('You have mastered Trinity Clash!', this.canvas.width / 2, this.canvas.height / 2 + 20 * this.scale);
+                this.ctx.shadowBlur = 0; // Reset shadow
+
+                // Draw the button
+                const buttonWidth = 250 * this.scale;
+                const buttonHeight = 70 * this.scale;
+                const x = (this.canvas.width - buttonWidth) / 2;
+                const y = this.canvas.height / 2 + 100 * this.scale; 
+                this.buttonHitboxes.playAgain = { x, y, width: buttonWidth, height: buttonHeight };
+
+                this.ctx.fillStyle = COLORS.finesse;
+                this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText('Main Menu', x + buttonWidth / 2, y + buttonHeight / 2);
+                this.ctx.textBaseline = 'alphabetic';
+            }
+            
+            drawSwordIcon(x, y, width, height) {
+                this.ctx.save();
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.lineWidth = 3 * this.scale;
+
+                // Pommel
+                const pommelRadius = (width * 0.4) / 2;
+                this.ctx.fillStyle = COLORS.might; // Red
+                this.ctx.beginPath();
+                this.ctx.arc(x + width / 2, y + pommelRadius, pommelRadius, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Hilt
+                const hiltWidth = width * 0.4;
+                const hiltHeight = height * 0.2;
+                const hiltY = y + pommelRadius * 2;
+                this.ctx.fillRect(x + (width - hiltWidth) / 2, hiltY, hiltWidth, hiltHeight);
+                this.ctx.strokeRect(x + (width - hiltWidth) / 2, hiltY, hiltWidth, hiltHeight);
+
+                // Crossguard
+                const guardHeight = height * 0.1;
+                const guardY = hiltY + hiltHeight;
+                this.ctx.fillStyle = COLORS.accent; // Gold
+                this.ctx.fillRect(x, guardY, width, guardHeight);
+                this.ctx.strokeRect(x, guardY, width, guardHeight);
+
+                // Blade
+                const bladeWidth = width * 0.4; // Wider blade
+                const bladeHeight = height * 0.65;
+                const bladeY = guardY + guardHeight;
+                this.ctx.fillStyle = '#9E9E9E'; // Gray
+                this.ctx.fillRect(x + (width - bladeWidth) / 2, bladeY, bladeWidth, bladeHeight);
+                this.ctx.strokeRect(x + (width - bladeWidth) / 2, bladeY, bladeWidth, bladeHeight);
+                
+                // Blade Tip
+                const tipY = bladeY + bladeHeight;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + (width - bladeWidth) / 2, tipY);
+                this.ctx.lineTo(x + width / 2, tipY + height * 0.1);
+                this.ctx.lineTo(x + (width + bladeWidth) / 2, tipY);
+                this.ctx.closePath();
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                this.ctx.restore();
+            }
+
+            drawMainMenuScreen() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${80 * this.scale}px "Cinzel"`;
+                
+                // --- Draw Title with Sword ---
+                const titleY = this.canvas.height / 2 - 350 * this.scale;
+                const remainingText = 'rinity Clash';
+                const textMetrics = this.ctx.measureText(remainingText);
+                
+                const swordWidth = 60 * this.scale;
+                const swordHeight = 80 * this.scale;
+                const totalTitleWidth = swordWidth + textMetrics.width;
+                
+                const startX = (this.canvas.width - totalTitleWidth) / 2;
+
+                // Draw the sword icon. Adjust Y position to align with text.
+                const swordY = titleY - swordHeight;
+                this.drawSwordIcon(startX, swordY, swordWidth, swordHeight);
+
+                // Draw the rest of the text
+                this.ctx.textAlign = 'left';
+                this.ctx.textBaseline = 'alphabetic';
+                this.ctx.fillText(remainingText, startX + swordWidth, titleY);
+                this.ctx.textAlign = 'center'; // Reset for other elements
+
+                // --- Draw Menu Buttons ---
+                const menuItems = ['3v3 Clash', '5v5 Clash', 'Boss Battle', 'Practice', 'Hero Viewer'];
+                const buttonWidth = 300 * this.scale;
+                const buttonHeight = 80 * this.scale;
+                const spacing = 30 * this.scale;
+                const totalHeight = menuItems.length * buttonHeight + (menuItems.length - 1) * spacing;
+                const startY = (this.canvas.height - totalHeight) / 2;
+
+                menuItems.forEach((item, index) => {
+                    const x = (this.canvas.width - buttonWidth) / 2;
+                    const y = startY + index * (buttonHeight + spacing);
+                    this.buttonHitboxes[item.toLowerCase().replace(' ', '')] = { x, y, width: buttonWidth, height: buttonHeight };
+                    
+                    this.ctx.fillStyle = COLORS.button;
+                    this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                    this.ctx.strokeStyle = COLORS.buttonBorder;
+                    this.ctx.lineWidth = 4 * this.scale;
+                    this.ctx.strokeRect(x, y, buttonWidth, buttonHeight);
+
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(item, x + buttonWidth / 2, y + buttonHeight / 2);
+                    this.ctx.textBaseline = 'alphabetic';
+                });
+            }
+
+            drawDifficultySelectionScreen() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+                this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                this.ctx.fillText('Select Difficulty', this.canvas.width / 2, this.canvas.height / 2 - 200 * this.scale);
+
+                const difficulties = ['Easy', 'Normal', 'Expert'];
+                const buttonWidth = 300 * this.scale;
+                const buttonHeight = 80 * this.scale;
+                const spacing = 30 * this.scale;
+                const totalHeight = difficulties.length * buttonHeight + (difficulties.length - 1) * spacing;
+                const startY = (this.canvas.height - totalHeight) / 2;
+
+                difficulties.forEach((level, index) => {
+                    const x = (this.canvas.width - buttonWidth) / 2;
+                    const y = startY + index * (buttonHeight + spacing);
+                    this.buttonHitboxes[level.toLowerCase()] = { x, y, width: buttonWidth, height: buttonHeight };
+                    
+                    this.ctx.fillStyle = COLORS.button;
+                    this.ctx.fillRect(x, y, buttonWidth, buttonHeight);
+                    this.ctx.strokeStyle = COLORS.buttonBorder;
+                    this.ctx.lineWidth = 4 * this.scale;
+                    this.ctx.strokeRect(x, y, buttonWidth, buttonHeight);
+
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(level, x + buttonWidth / 2, y + buttonHeight / 2);
+                    this.ctx.textBaseline = 'alphabetic';
+                });
+
+                this.drawBackButton();
+            }
+
+            drawHeroSelectionScreen() {
+                const cardWidth = this.baseCardWidth * this.scale;
+                const cardHeight = this.baseCardHeight * this.scale;
+                const spacing = 20 * this.scale;
+                const allHeroes = JSON.parse(JSON.stringify(HEROES));
+
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+
+                this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                this.ctx.fillText('Choose Your Team', this.canvas.width / 2, 80 * this.scale);
+                
+                this.ctx.font = `${24 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillText(`Select ${this.state.teamSize} heroes (${this.state.player1Team.length} / ${this.state.teamSize})`, this.canvas.width / 2, 130 * this.scale);
+
+                const cardsPerRow = Math.max(1, Math.floor((this.canvas.width - spacing) / (cardWidth + spacing)));
+                const numRows = Math.ceil(allHeroes.length / cardsPerRow);
+                const rowSpacing = 30 * this.scale;
+
+                const gridWidth = cardsPerRow * cardWidth + (cardsPerRow - 1) * spacing;
+                const gridHeight = numRows * cardHeight + (numRows - 1) * rowSpacing;
+
+                const startX = (this.canvas.width - gridWidth) / 2;
+                const topMargin = 150 * this.scale;
+                const bottomMargin = 150 * this.scale;
+                const availableHeight = this.canvas.height - topMargin - bottomMargin;
+                const startY = topMargin + (availableHeight - gridHeight) / 2;
+                
+                this.cardHitboxes.selection = [];
+                allHeroes.forEach((hero, index) => {
+                    const col = index % cardsPerRow;
+                    const row = Math.floor(index / cardsPerRow);
+                    const x = startX + col * (cardWidth + spacing);
+                    const y = startY + row * (cardHeight + rowSpacing);
+
+                    this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
+                    this.drawCard(x, y, hero, 'selection');
+                });
+
+                if (this.state.player1Team.length === this.state.teamSize) {
+                    const buttonWidth = 300 * this.scale;
+                    const buttonHeight = 80 * this.scale;
+                    const btnX = (this.canvas.width - buttonWidth) / 2;
+                    const btnY = this.canvas.height - (150 * this.scale);
+                    const buttonText = this.state.difficulty === 'boss' ? 'Face the Boss!' : 'Start Game';
+                    this.buttonHitboxes.startGame = { x: btnX, y: btnY, width: buttonWidth, height: buttonHeight };
+
+                    this.ctx.fillStyle = COLORS.button;
+                    this.ctx.fillRect(btnX, btnY, buttonWidth, buttonHeight);
+                    this.ctx.strokeStyle = COLORS.buttonBorder;
+                    this.ctx.lineWidth = 4 * this.scale;
+                    this.ctx.strokeRect(btnX, btnY, buttonWidth, buttonHeight);
+
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${40 * this.scale}px "Cinzel"`;
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(buttonText, btnX + buttonWidth / 2, btnY + buttonHeight / 2);
+                    this.ctx.textBaseline = 'alphabetic';
+                }
+
+                this.drawBackButton();
+            }
+
+            drawPracticeSelectionScreen() {
+                const cardWidth = this.baseCardWidth * this.scale;
+                const cardHeight = this.baseCardHeight * this.scale;
+                const spacing = 20 * this.scale;
+                const allHeroes = JSON.parse(JSON.stringify(HEROES));
+
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+
+                const title = this.state.practiceSelectionState === 'player' ? 'Choose Your Team' : 'Choose Opponent\'s Team';
+                const team = this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team;
+
+                this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                this.ctx.fillText(title, this.canvas.width / 2, 80 * this.scale);
+                
+                this.ctx.font = `${24 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillText(`Select ${this.state.teamSize} heroes (${team.length} / ${this.state.teamSize})`, this.canvas.width / 2, 130 * this.scale);
+
+                const cardsPerRow = Math.max(1, Math.floor((this.canvas.width - spacing) / (cardWidth + spacing)));
+                const numRows = Math.ceil(allHeroes.length / cardsPerRow);
+                const rowSpacing = 30 * this.scale;
+
+                const gridWidth = cardsPerRow * cardWidth + (cardsPerRow - 1) * spacing;
+                const gridHeight = numRows * cardHeight + (numRows - 1) * rowSpacing;
+
+                const startX = (this.canvas.width - gridWidth) / 2;
+                const topMargin = 150 * this.scale;
+                const bottomMargin = 150 * this.scale;
+                const availableHeight = this.canvas.height - topMargin - bottomMargin;
+                const startY = topMargin + (availableHeight - gridHeight) / 2;
+                
+                this.cardHitboxes.selection = [];
+                allHeroes.forEach((hero, index) => {
+                    const col = index % cardsPerRow;
+                    const row = Math.floor(index / cardsPerRow);
+                    const x = startX + col * (cardWidth + spacing);
+                    const y = startY + row * (cardHeight + rowSpacing);
+
+                    this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
+                    this.drawCard(x, y, hero, 'selection');
+                });
+
+                if (team.length === this.state.teamSize) {
+                    const buttonWidth = 300 * this.scale;
+                    const buttonHeight = 80 * this.scale;
+                    const btnX = (this.canvas.width - buttonWidth) / 2;
+                    const btnY = this.canvas.height - (150 * this.scale);
+                    const buttonText = this.state.practiceSelectionState === 'player' ? 'Confirm Your Team' : 'Start Practice';
+                    this.buttonHitboxes.confirmTeam = { x: btnX, y: btnY, width: buttonWidth, height: buttonHeight };
+
+                    this.ctx.fillStyle = COLORS.button;
+                    this.ctx.fillRect(btnX, btnY, buttonWidth, buttonHeight);
+                    this.ctx.strokeStyle = COLORS.buttonBorder;
+                    this.ctx.lineWidth = 4 * this.scale;
+                    this.ctx.strokeRect(btnX, btnY, buttonWidth, buttonHeight);
+
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${40 * this.scale}px "Cinzel"`;
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(buttonText, btnX + buttonWidth / 2, btnY + buttonHeight / 2);
+                    this.ctx.textBaseline = 'alphabetic';
+                }
+                this.drawBackButton();
+            }
+
+            drawHeroViewerScreen() {
+                const cardWidth = this.baseCardWidth * this.scale * 2;
+                const cardHeight = this.baseCardHeight * this.scale * 2;
+                const x = (this.canvas.width - cardWidth) / 2;
+                const y = (this.canvas.height - cardHeight) / 2 - 50 * this.scale;
+                const hero = HEROES[this.state.heroViewerIndex];
+                
+                this.drawCard(x, y, hero, 'viewer', [], 2);
+
+                // Draw buttons
+                const buttonWidth = 200 * this.scale;
+                const buttonHeight = 70 * this.scale;
+                const btnY = y + cardHeight + 50 * this.scale;
+
+                const prevX = x;
+                this.buttonHitboxes.previous = { x: prevX, y: btnY, width: buttonWidth, height: buttonHeight };
+                this.ctx.fillStyle = COLORS.button;
+                this.ctx.fillRect(prevX, btnY, buttonWidth, buttonHeight);
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.lineWidth = 4 * this.scale;
+                this.ctx.strokeRect(prevX, btnY, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${30 * this.scale}px "Cinzel"`;
+                this.ctx.textBaseline = 'middle';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Previous', prevX + buttonWidth / 2, btnY + buttonHeight / 2);
+
+                const nextX = x + cardWidth - buttonWidth;
+                this.buttonHitboxes.next = { x: nextX, y: btnY, width: buttonWidth, height: buttonHeight };
+                this.ctx.fillStyle = COLORS.button;
+                this.ctx.fillRect(nextX, btnY, buttonWidth, buttonHeight);
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.strokeRect(nextX, btnY, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.fillText('Next', nextX + buttonWidth / 2, btnY + buttonHeight / 2);
+                
+                const backX = (this.canvas.width - buttonWidth) / 2;
+                const backY = btnY + buttonHeight + 30 * this.scale;
+                this.buttonHitboxes.back = { x: backX, y: backY, width: buttonWidth, height: buttonHeight };
+                this.ctx.fillStyle = COLORS.might;
+                this.ctx.fillRect(backX, backY, buttonWidth, buttonHeight);
+                this.ctx.strokeStyle = COLORS.buttonBorder;
+                this.ctx.strokeRect(backX, backY, buttonWidth, buttonHeight);
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.fillText('Back', backX + buttonWidth / 2, backY + buttonHeight / 2);
+                this.ctx.textBaseline = 'alphabetic';
+            }
+
+
+            // -----------------------------------
+            //  Game Logic
+            // -----------------------------------
+            
+            log(message) {
+                this.state.battleLog.unshift(message);
+                if (this.state.battleLog.length > 20) { // Keep the log to a reasonable size
+                    this.state.battleLog.pop();
+                }
+            }
+
+            startNewRound() {
+                this.state.round++;
+                this.log(`--- Round ${this.state.round} ---`);
+                this.state.isClashing = false;
+                this.state.bossActiveAbility = null;
+
+                const p1Theron = this.state.player1Team.find(h => h.abilityId === 'fireball' && h.hp > 0);
+                if (p1Theron && this.state.round === 5) {
+                    this.handleFireball(p1Theron, this.state.player2Team, 'player2');
+                }
+                const p2Theron = this.state.player2Team.find(h => h.abilityId === 'fireball' && h.hp > 0);
+                if (p2Theron && this.state.round === 5) {
+                    this.handleFireball(p2Theron, this.state.player1Team, 'player1');
+                }
+
+                const p1Kaelen = this.state.player1Team.find(h => h.abilityId === 'longBow' && h.hp > 0);
+                if (p1Kaelen && this.state.round % 2 === 0) {
+                    this.handleLongBow(p1Kaelen, this.state.player2Team);
+                }
+
+                const p2Kaelen = this.state.player2Team.find(h => h.abilityId === 'longBow' && h.hp > 0);
+                if (p2Kaelen && this.state.round % 2 === 0) {
+                    this.handleLongBow(p2Kaelen, this.state.player1Team);
+                }
+                
+                if (!this.state.winner) {
+                    this.log('Select a hero to clash.');
+                }
+            }
+
+            handleFireball(caster, targetTeam, targetTeamKey) {
+                let livingTargets = targetTeam.filter(h => h.hp > 0);
+                if (livingTargets.length === 0) return;
+
+                this.log(`${caster.name} unleashes a Fireball!`);
+                this.state.fireballAnimation = { progress: 0, targetTeamKey };
+                
+                const taunter = livingTargets.find(h => h.abilityId === 'tank' && h.hp > 0);
+
+                livingTargets.forEach(target => {
+                    let damage = 5;
+                    let finalTarget = taunter || target;
+
+                    if(caster.type === 'Magic' && finalTarget.type === 'Might') {
+                        damage *= 2;
+                    }
+
+                    if (finalTarget.abilityId === 'smokeBomb' && !finalTarget.smokeBombUsed) {
+                        this.log(`${finalTarget.name}'s Smoke Bomb evades the fireball!`);
+                        finalTarget.smokeBombUsed = true;
+                    } else {
+                        finalTarget.hp -= damage;
+                        this.log(`Fireball hits ${finalTarget.name} for ${damage} damage.`);
+                        this.checkHeroKO(finalTarget);
+                    }
+                });
+                
+                this.checkGameOver();
+            }
+
+            handleLongBow(kaelen, targetTeam) {
+                let livingTargets = targetTeam.filter(h => h.hp > 0);
+                if (livingTargets.length === 0) return;
+
+                let randomTarget = livingTargets[Math.floor(Math.random() * livingTargets.length)];
+                const taunter = targetTeam.find(h => h.abilityId === 'tank' && h.hp > 0);
+                let finalTarget = taunter || randomTarget;
+                
+                const kaelenBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === kaelen.id);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === finalTarget.id);
+
+                if (kaelenBox && targetBox) {
+                    this.state.abilityAnimations.push({
+                        type: 'longBow',
+                        progress: 0,
+                        speed: 0.02 * 0.25,
+                        startX: kaelenBox.x + kaelenBox.width / 2,
+                        startY: kaelenBox.y + kaelenBox.height / 2,
+                        endX: targetBox.x + targetBox.width / 2,
+                        endY: targetBox.y + targetBox.height / 2,
+                    });
+                }
+
+                let damage = 2;
+
+                if (finalTarget.abilityId === 'smokeBomb' && !finalTarget.smokeBombUsed) {
+                    damage = 0;
+                    finalTarget.smokeBombUsed = true;
+                    this.log(`${kaelen.name}'s arrow was dodged by ${finalTarget.name}!`);
+                } else {
+                    finalTarget.hp -= damage;
+                    this.log(`${kaelen.name}'s arrow hits ${finalTarget.name} for ${damage} damage.`);
+                    this.checkHeroKO(finalTarget);
+                }
+                
+                this.checkGameOver();
+            }
+
+            initiateClashAnimation() {
+                if (!this.state.pendingClash) return;
+
+                const { p1, p2 } = this.state.pendingClash;
+                const p1StartPos = this.cardHitboxes.player1.find(box => box.hero.id === p1.id);
+                const p2StartPos = this.cardHitboxes.player2.find(box => box.hero.id === p2.id);
+
+                if (p1StartPos && p2StartPos) {
+                    this.state.animation = {
+                        type: 'clash',
+                        progress: 0,
+                        speed: 0.0075 * 0.25, // Slower
+                        p1, p2,
+                        p1StartPos: { ...p1StartPos }, 
+                        p2StartPos: { ...p2StartPos },
+                        impactTriggered: false,
+                        onComplete: () => {
+                            setTimeout(() => {
+                                this.state.player1Selection = null;
+                                this.state.player2Selection = null;
+                                this.startNewRound();
+                            }, 1500);
+                        }
+                    };
+                    this.state.pendingClash = null;
+                }
+            }
+
+            resolveClash() {
+                if (!this.state.player1Selection || this.state.isClashing) return;
+                
+                const p1 = this.state.player1Selection;
+                let p2;
+
+                if (this.state.gamePhase === 'bossBattle') {
+                    p2 = this.state.player2Team[0]; // The boss is the only opponent
+                    const abilities = p2.abilities;
+                    this.state.bossActiveAbility = abilities[Math.floor(Math.random() * abilities.length)];
+                    this.log(`The Minotaur uses ${this.state.bossActiveAbility.toUpperCase()}!`);
+                } else {
+                    let p2Team = this.state.player2Team.filter(h => h.hp > 0);
+                    if (p2Team.length === 0) {
+                        this.checkGameOver();
+                        return;
+                    }
+                    
+                    // --- AI Hero Selection ---
+                    if (this.state.difficulty === 'easy' || this.state.difficulty === 'normal') {
+                        // Easy & Normal AI: Choose a random living hero
+                        p2 = p2Team[Math.floor(Math.random() * p2Team.length)];
+                    } else { // Expert AI
+                        // Expert AI: Simulate clashes to find the best possible outcome
+                        let bestChoice = null;
+                        let maxScore = -Infinity;
+
+                        p2Team.forEach(opponent => {
+                            const [p1Dmg, p2Dmg] = this.simulateClash(p1, opponent);
+                            const score = p2Dmg - p1Dmg; // How much more damage the AI deals than it takes.
+                            if (score > maxScore) {
+                                maxScore = score;
+                                bestChoice = opponent;
+                            }
+                        });
+                        p2 = bestChoice;
+                    }
+                }
+                
+                this.state.isClashing = true;
+                this.state.player2Selection = p2;
+                this.log(`${p1.name} clashes with ${p2.name}!`);
+
+                // --- Pre-Clash Abilities (Ambush & Boss Abilities) ---
+                if (this.state.gamePhase === 'bossBattle') {
+                     if (this.state.bossActiveAbility === 'cleave') {
+                        this.state.abilityAnimations.push({ type: 'cleave', progress: 0, speed: 0.02 * 0.25 });
+                        this.state.player1Team.forEach(hero => {
+                            if (hero.hp > 0) {
+                                hero.hp -= 4;
+                                this.log(`Cleave hits ${hero.name} for 4 damage!`);
+                                this.checkHeroKO(hero);
+                            }
+                        });
+                    } else if (this.state.bossActiveAbility === 'intimidation') {
+                        this.state.abilityAnimations.push({ type: 'intimidation', progress: 0, speed: 0.02 * 0.25 });
+                    }
+                } else {
+                    this.state.player1Team.forEach(hero => {
+                        if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.id !== p1.id) {
+                            p2.hp -= 2;
+                            this.log(`${hero.name}'s Ambush hits ${p2.name} for 2 damage!`);
+                            this.state.abilityAnimations.push({ type: 'ambush', target: p2, progress: 0, speed: 0.03 * 0.25 });
+                            this.checkHeroKO(p2);
+                        }
+                    });
+                    this.state.player2Team.forEach(hero => {
+                         if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.id !== p2.id) {
+                            p1.hp -= 2;
+                            this.log(`${hero.name}'s Ambush hits ${p1.name} for 2 damage!`);
+                            this.state.abilityAnimations.push({ type: 'ambush', target: p1, progress: 0, speed: 0.03 * 0.25 });
+                            this.checkHeroKO(p1);
+                        }
+                    });
+                }
+                
+                if (this.checkGameOver()) return; // Check if pre-clash abilities were lethal
+
+                this.state.pendingClash = { p1, p2 };
+            }
+
+            simulateClash(p1, p2) {
+                let p1Damage = this.getHeroCurrentAP(p1, this.state.player1Team);
+                let p2Damage = this.getHeroCurrentAP(p2, this.state.player2Team);
+
+                const p1HasAdvantage = (p1.type === 'Might' && p2.type === 'Finesse') || (p1.type === 'Finesse' && p2.type === 'Magic') || (p1.type === 'Magic' && p2.type === 'Might');
+                const p2HasAdvantage = (p2.type === 'Might' && p1.type === 'Finesse') || (p2.type === 'Finesse' && p1.type === 'Magic') || (p2.type === 'Magic' && p1.type === 'Might');
+
+                if (p1HasAdvantage) {
+                    p1Damage *= 2;
+                    p2Damage = Math.ceil(p2Damage / 2);
+                } else if (p2HasAdvantage) {
+                    p2Damage *= 2;
+                    p1Damage = Math.ceil(p1Damage / 2);
+                }
+                
+                return [p1Damage, p2Damage];
+            }
+
+            triggerImpact() {
+                this.state.impactAnimation = {
+                    x: this.canvas.width / 2,
+                    y: this.canvas.height / 2,
+                    progress: 0,
+                    radius: 240 * this.scale, // Doubled
+                };
+            }
+
+            triggerOverloadAnimation(caster, target) {
+                const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === caster.id);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === target.id);
+                if (casterBox && targetBox) {
+                    this.state.overloadAnimation = {
+                        progress: 0,
+                        startX: casterBox.x + this.baseCardWidth * this.scale / 2,
+                        startY: casterBox.y + this.baseCardHeight * this.scale / 2,
+                        endX: targetBox.x + this.baseCardWidth * this.scale / 2,
+                        endY: targetBox.y + this.baseCardHeight * this.scale / 2,
+                    };
+                }
+            }
+            
+            getHeroCurrentAP(hero, team) {
+                let currentAP = hero.ap;
+                if (hero.abilityId === 'mobRule') {
+                    const otherGoblins = team.filter(h => h.id !== hero.id && h.name.includes('Goblin') && h.hp > 0);
+                    currentAP += otherGoblins.length;
+                }
+                return currentAP;
+            }
+
+            calculateClashResult(p1, p2) {
+                let p1Damage = this.getHeroCurrentAP(p1, this.state.player1Team);
+                let p2Damage = this.getHeroCurrentAP(p2, this.state.player2Team);
+
+                if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'ram') {
+                    p2Damage += 5;
+                }
+
+                const p1HasAdvantage = (p1.type === 'Might' && p2.type === 'Finesse') || (p1.type === 'Finesse' && p2.type === 'Magic') || (p1.type === 'Magic' && p2.type === 'Might');
+                const p2HasAdvantage = (p2.type === 'Might' && p1.type === 'Finesse') || (p2.type === 'Finesse' && p1.type === 'Magic') || (p2.type === 'Magic' && p1.type === 'Might');
+
+                if (p1HasAdvantage) {
+                    p1Damage *= 2;
+                    p2Damage = Math.ceil(p2Damage / 2);
+                    this.log(`${p1.name} has the advantage!`);
+                } else if (p2HasAdvantage) {
+                    p2Damage *= 2;
+                    p1Damage = Math.ceil(p1Damage / 2);
+                    this.log(`${p2.name} has the advantage!`);
+                }
+                
+                let finalP1Damage = p1Damage;
+                let finalP2Damage = p2Damage;
+
+                let p1Target = p1;
+                let p2Target = p2;
+
+                if (this.state.gamePhase !== 'bossBattle') {
+                    const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                    if (p1Taunter && p1Taunter.id !== p1.id) {
+                        p1Target = p1Taunter;
+                        this.log(`${p1Taunter.name} absorbs the attack for ${p1.name}!`);
+                    }
+
+                    const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                    if (p2Taunter && p2Taunter.id !== p2.id) {
+                        p2Target = p2Taunter;
+                        this.log(`${p2Taunter.name} absorbs the attack for ${p2.name}!`);
+                    }
+                }
+
+                // --- ABILITY PHASE ---
+                if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'intimidation') {
+                    finalP1Damage = 0;
+                }
+
+                if (p1.abilityId === 'firstStrike' && finalP1Damage >= p2Target.hp) {
+                    finalP2Damage = 0;
+                    this.log(`Vex's First Strike is lethal! She takes no damage.`);
+                }
+                if (p2.abilityId === 'firstStrike' && finalP2Damage >= p1Target.hp) {
+                    finalP1Damage = 0;
+                    this.log(`Vex's First Strike is lethal! She takes no damage.`);
+                }
+                
+                if (p1Target.abilityId === 'smokeBomb' && !p1Target.smokeBombUsed) {
+                    finalP2Damage = 0;
+                    p1Target.smokeBombUsed = true;
+                    this.log(`${p1Target.name}'s Smoke Bomb evades the attack!`);
+                    this.state.abilityAnimations.push({ type: 'smokeBomb', hero: p1Target, progress: 0, speed: 0.025 * 0.25 });
+                }
+                if (p2Target.abilityId === 'smokeBomb' && !p2Target.smokeBombUsed) {
+                    finalP1Damage = 0;
+                    p2Target.smokeBombUsed = true;
+                    this.log(`${p2Target.name}'s Smoke Bomb evades the attack!`);
+                    this.state.abilityAnimations.push({ type: 'smokeBomb', hero: p2Target, progress: 0, speed: 0.025 * 0.25 });
+                }
+                
+                if (p1.abilityId !== 'crush' && p2Target.abilityId === 'sturdy') { finalP1Damage = Math.max(0, finalP1Damage - 1); }
+                if (p2.abilityId !== 'crush' && p1Target.abilityId === 'sturdy') { finalP2Damage = Math.max(0, finalP2Damage - 1); }
+
+                // --- DAMAGE PHASE ---
+                if(finalP2Damage > 0) {
+                    p1Target.hp -= finalP2Damage;
+                    this.log(`${p2.name} deals ${finalP2Damage} damage to ${p1Target.name}.`);
+                    this.checkHeroKO(p1Target);
+                }
+                 if(finalP1Damage > 0) {
+                    p2Target.hp -= finalP1Damage;
+                    this.log(`${p1.name} deals ${finalP1Damage} damage to ${p2Target.name}.`);
+                    this.checkHeroKO(p2Target);
+                }
+                
+                // --- POST-CLASH ABILITIES ---
+                if (p1.abilityId === 'unstableConcoction' && p1HasAdvantage && p1.hp > 0) {
+                    this.log(`${p1.name}'s concoction explodes!`);
+                    this.state.player2Team.forEach(enemy => {
+                        if (enemy.hp > 0) {
+                            enemy.hp -= 3;
+                            this.log(`Explosion hits ${enemy.name} for 3 damage.`);
+                            this.checkHeroKO(enemy);
+                        }
+                    });
+                }
+                 if (p2.abilityId === 'unstableConcoction' && p2HasAdvantage && p2.hp > 0) {
+                    this.log(`${p2.name}'s concoction explodes!`);
+                    this.state.player1Team.forEach(enemy => {
+                        if (enemy.hp > 0) {
+                            enemy.hp -= 3;
+                            this.log(`Explosion hits ${enemy.name} for 3 damage.`);
+                            this.checkHeroKO(enemy);
+                        }
+                    });
+                }
+
+                if (p1.abilityId === 'overload' && p1.hp > 0 && Math.random() < 0.5) {
+                    this.handleOverload(p1, p2);
+                }
+                if (p2.abilityId === 'overload' && p2.hp > 0 && Math.random() < 0.5) {
+                    this.handleOverload(p2, p1);
+                }
+
+                if (p1.abilityId === 'soulSiphon' && p2Target.hp <= 0 && p1.hp > 0 && !p1.soulSiphonUsed) {
+                    const defeatedHeroStats = HEROES.find(h => h.id === p2Target.id);
+                    if (defeatedHeroStats) {
+                        p1.hp += defeatedHeroStats.hp;
+                        this.log(`Elara siphons ${defeatedHeroStats.hp} life!`);
+                        p1.soulSiphonUsed = true;
+                    }
+                }
+                if (p2.abilityId === 'soulSiphon' && p1Target.hp <= 0 && p2.hp > 0 && !p2.soulSiphonUsed) {
+                    const defeatedHeroStats = HEROES.find(h => h.id === p1Target.id);
+                    if (defeatedHeroStats) {
+                        p2.hp += defeatedHeroStats.hp;
+                        this.log(`Elara siphons ${defeatedHeroStats.hp} life!`);
+                        p2.soulSiphonUsed = true;
+                    }
+                }
+                
+                this.checkGameOver();
+            }
+
+            handleOverload(caster, originalTarget) {
+                let targetTeam, casterTeamKey;
+                if (this.state.player1Team.includes(caster)) {
+                    casterTeamKey = 'player1';
+                } else {
+                    casterTeamKey = 'player2';
+                }
+
+                let potentialTargets = [
+                    ...this.state.player1Team.filter(h => h.hp > 0 && h.id !== caster.id && h.id !== originalTarget.id),
+                    ...this.state.player2Team.filter(h => h.hp > 0 && h.id !== caster.id && h.id !== originalTarget.id)
+                ];
+
+                if (potentialTargets.length > 0) {
+                    const overloadTarget = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+                    this.triggerOverloadAnimation(caster, overloadTarget);
+                    overloadTarget.hp -= 4;
+                    this.log(`${caster.name}'s Overload zaps ${overloadTarget.name} for 4 damage!`);
+                    this.checkHeroKO(overloadTarget);
+                } else {
+                     this.log(`${caster.name}'s Overload fizzles with no other targets!`);
+                }
+            }
+
+            checkHeroKO(hero) {
+                if (hero.hp <= 0 && !hero.deathAnimation) {
+                    if (hero.abilityId === 'lastStand' && !hero.lastStandUsed) {
+                        hero.hp = 1;
+                        hero.lastStandUsed = true;
+                        this.log(`${hero.name}'s Last Stand activates!`);
+                        this.state.abilityAnimations.push({ type: 'lastStand', hero: hero, progress: 0, speed: 0.02 * 0.25 });
+                    } else {
+                        hero.hp = 0;
+                        hero.deathAnimation = { progress: 0 };
+                        this.log(`${hero.name} has been defeated!`);
+                    }
+                }
+            }
+
+            initConfetti() {
+                this.state.confettiParticles = [];
+                for (let i = 0; i < 200; i++) {
+                    this.state.confettiParticles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * -this.canvas.height, // Start above the screen
+                        width: 10 * this.scale * (Math.random() * 0.5 + 0.5),
+                        height: 20 * this.scale * (Math.random() * 0.5 + 0.5),
+                        color: [COLORS.accent, COLORS.might, COLORS.finesse, COLORS.magic][Math.floor(Math.random() * 4)],
+                        speed: (Math.random() * 3 + 2) * this.scale,
+                        angle: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.2
+                    });
+                }
+            }
+
+            checkGameOver() {
+                const p1HasHeroes = this.state.player1Team.some(h => h.hp > 0);
+                const p2HasHeroes = this.state.player2Team.some(h => h.hp > 0);
+                
+                if (!p1HasHeroes) this.state.winner = 'p2';
+                else if (!p2HasHeroes) this.state.winner = 'p1';
+                
+                if (this.state.winner) {
+                    setTimeout(() => {
+                        if (this.state.winner === 'p1' && this.state.difficulty === 'expert') {
+                            this.state.gamePhase = 'expertVictory';
+                            this.initConfetti();
+                        } else {
+                            this.state.gamePhase = 'gameOver';
+                        }
+                        this.log(`--- GAME OVER ---`);
+                        const message = this.state.winner === 'p1' ? 'VICTORY!' : 'DEFEAT!';
+                        this.log(message);
+                    }, 1000);
+                    return true;
+                }
+                return false;
+            }
+
+            // -----------------------------------
+            //  Event Handling
+            // -----------------------------------
+            handleCanvasClick(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                // Universal Back to Menu button check
+                if (this.state.gamePhase !== 'mainMenu' && this.state.gamePhase !== 'gameOver' && this.state.gamePhase !== 'expertVictory') {
+                    const backBtn = this.buttonHitboxes.backToMenu;
+                    if (backBtn && this.isClickInHitbox(mouseX, mouseY, backBtn)) {
+                        this.resetGame();
+                        return; // Stop further click processing
+                    }
+                }
+
+                switch (this.state.gamePhase) {
+                    case 'mainMenu':
+                        this.handleMainMenuClick(mouseX, mouseY);
+                        break;
+                    case 'difficultySelection':
+                        this.handleDifficultySelectionClick(mouseX, mouseY);
+                        break;
+                    case 'heroSelection':
+                        this.handleHeroSelectionClick(mouseX, mouseY);
+                        break;
+                    case 'practiceSelection':
+                        this.handlePracticeSelectionClick(mouseX, mouseY);
+                        break;
+                    case 'heroViewer':
+                        this.handleHeroViewerClick(mouseX, mouseY);
+                        break;
+                    case 'playing':
+                    case 'bossBattle':
+                        this.handlePlayingClick(mouseX, mouseY);
+                        break;
+                    case 'gameOver':
+                    case 'expertVictory':
+                        this.handleGameOverClick(mouseX, mouseY);
+                        break;
+                }
+            }
+
+            handleMouseMove(event) {
+                if (this.state.gamePhase !== 'heroSelection' && this.state.gamePhase !== 'practiceSelection' && this.state.gamePhase !== 'playing' && this.state.gamePhase !== 'bossBattle') {
+                    this.state.hoveredHero = null;
+                    return;
+                }
+
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                let foundHero = null;
+                
+                const checkHitboxes = (hitboxes, team) => {
+                    for (const hitbox of hitboxes) {
+                        if (mouseX >= hitbox.x && mouseX <= hitbox.x + hitbox.width && mouseY >= hitbox.y && mouseY <= hitbox.y + hitbox.height) {
+                            foundHero = { ...hitbox, team };
+                            break;
+                        }
+                    }
+                };
+
+                if (this.state.gamePhase === 'heroSelection' || this.state.gamePhase === 'practiceSelection') {
+                    checkHitboxes(this.cardHitboxes.selection, []);
+                } else if (this.state.gamePhase === 'playing' || this.state.gamePhase === 'bossBattle') {
+                    checkHitboxes(this.cardHitboxes.player1, this.state.player1Team);
+                    if (!foundHero) {
+                        checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
+                    }
+                }
+                
+                this.state.hoveredHero = foundHero;
+            }
+
+            handleMainMenuClick(mouseX, mouseY) {
+                if (this.buttonHitboxes['3v3clash'] && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['3v3clash'])) {
+                    this.state.teamSize = 3;
+                    this.state.gamePhase = 'difficultySelection';
+                }
+                if (this.buttonHitboxes['5v5clash'] && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['5v5clash'])) {
+                    this.state.teamSize = 5;
+                    this.state.gamePhase = 'difficultySelection';
+                }
+                 if (this.buttonHitboxes.bossbattle && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.bossbattle)) {
+                    this.state.difficulty = 'boss';
+                    this.state.teamSize = 5;
+                    this.state.gamePhase = 'heroSelection';
+                }
+                if (this.buttonHitboxes.practice && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.practice)) {
+                    this.state.teamSize = 3; // Default practice to 3v3
+                    this.state.gamePhase = 'practiceSelection';
+                }
+                if (this.buttonHitboxes.heroviewer && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.heroviewer)) {
+                    this.state.gamePhase = 'heroViewer';
+                }
+            }
+
+            handleDifficultySelectionClick(mouseX, mouseY) {
+                for (const level in this.buttonHitboxes) {
+                    const btn = this.buttonHitboxes[level];
+                    if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) {
+                        this.state.difficulty = level;
+                        this.state.gamePhase = 'heroSelection';
+                        return;
+                    }
+                }
+            }
+
+            handleHeroSelectionClick(mouseX, mouseY) {
+                for (const hitbox of this.cardHitboxes.selection) {
+                    if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
+                        const selectedHero = hitbox.hero;
+                        const index = this.state.player1Team.findIndex(h => h.id === selectedHero.id);
+
+                        if (index > -1) {
+                            this.state.player1Team.splice(index, 1);
+                        } else if (this.state.player1Team.length < this.state.teamSize) {
+                            this.state.player1Team.push(JSON.parse(JSON.stringify(selectedHero)));
+                        }
+                        return;
+                    }
+                }
+
+                const startBtn = this.buttonHitboxes.startGame;
+                if (startBtn && this.isClickInHitbox(mouseX, mouseY, startBtn)) {
+                    if (this.state.difficulty === 'boss') {
+                        this.startBossBattle();
+                    } else {
+                        this.startGame();
+                    }
+                }
+            }
+
+            handlePracticeSelectionClick(mouseX, mouseY) {
+                for (const hitbox of this.cardHitboxes.selection) {
+                    if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
+                        const selectedHero = hitbox.hero;
+                        const team = this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team;
+                        const index = team.findIndex(h => h.id === selectedHero.id);
+
+                        if (index > -1) {
+                            team.splice(index, 1);
+                        } else if (team.length < this.state.teamSize) {
+                            team.push(JSON.parse(JSON.stringify(selectedHero)));
+                        }
+                        return;
+                    }
+                }
+
+                const confirmBtn = this.buttonHitboxes.confirmTeam;
+                if (confirmBtn && this.isClickInHitbox(mouseX, mouseY, confirmBtn)) {
+                    if (this.state.practiceSelectionState === 'player') {
+                        this.state.practiceSelectionState = 'opponent';
+                    } else {
+                        this.startGame(true);
+                    }
+                }
+            }
+
+            handleHeroViewerClick(mouseX, mouseY) {
+                if (this.buttonHitboxes.previous && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.previous)) {
+                    this.state.heroViewerIndex = (this.state.heroViewerIndex - 1 + HEROES.length) % HEROES.length;
+                }
+                if (this.buttonHitboxes.next && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.next)) {
+                    this.state.heroViewerIndex = (this.state.heroViewerIndex + 1) % HEROES.length;
+                }
+                if (this.buttonHitboxes.back && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.back)) {
+                    this.state.gamePhase = 'mainMenu';
+                }
+            }
+
+            handlePlayingClick(mouseX, mouseY) {
+                if (this.state.isClashing) return;
+
+                const clashBtn = this.buttonHitboxes.clash;
+                if (clashBtn && this.isClickInHitbox(mouseX, mouseY, clashBtn)) {
+                    this.resolveClash();
+                    return;
+                }
+
+                for (const hitbox of this.cardHitboxes.player1) {
+                    if (this.isClickInHitbox(mouseX, mouseY, hitbox) && hitbox.hero.hp > 0) {
+                        this.state.player1Selection = hitbox.hero;
+                        this.log(`You selected ${hitbox.hero.name}.`);
+                        return;
+                    }
+                }
+            }
+
+            handleGameOverClick(mouseX, mouseY) {
+                const btn = this.buttonHitboxes.playAgain;
+                if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) {
+                    this.resetGame();
+                }
+            }
+
+            isClickInHitbox(mouseX, mouseY, hitbox) {
+                return mouseX >= hitbox.x && mouseX <= hitbox.x + hitbox.width &&
+                       mouseY >= hitbox.y && mouseY <= hitbox.y + hitbox.height;
+            }
+            
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.scale = Math.min(this.canvas.width / this.baseWidth, this.canvas.height / this.baseHeight);
+            }
+        }
+
+        // ===================================
+        //  ▶️ 3. INITIALIZE
+        // ===================================
+        window.onload = () => {
+            const game = new Game('gameCanvas');
+        };
+    </script>
+</body>
+</html>
