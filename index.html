@@ -1634,17 +1634,15 @@
             processStatusEffects(team) {
                 team.forEach(hero => {
                     if (hero.hp > 0 && hero.statusEffects.length > 0) {
+                        const bleedEffect = hero.statusEffects.find(e => e.type === 'bleed');
+                        if (bleedEffect) {
+                            // Create a temporary source object for logging purposes
+                            const bleedSource = { name: 'Bleed', type: 'Magic' };
+                            this.dealDamage(bleedSource, hero, bleedEffect.damage, 'status');
+                            this.state.abilityAnimations.push({ type: 'bleed', hero: hero, progress: 0, speed: 0.04 });
+                        }
+
                         hero.statusEffects.forEach(effect => {
-                            if (effect.type === 'bleed') {
-                                hero.hp -= effect.damage;
-                                this.log([
-                                    { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
-                                    { text: ` takes ${effect.damage} damage from `, color: COLORS.text },
-                                    { text: 'Bleed!', color: COLORS.damage }
-                                ]);
-                                this.state.abilityAnimations.push({ type: 'bleed', hero: hero, progress: 0, speed: 0.04 });
-                                this.checkHeroKO(hero);
-                            }
                             if (effect.duration) {
                                 effect.duration--;
                             }
@@ -1714,16 +1712,10 @@
                         ]);
                         taunter.smokeBombUsed = true;
                     } else {
-                        taunter.hp -= totalDamage;
-                        this.log([
-                            { text: taunter.name, color: COLORS[taunter.type.toLowerCase()] },
-                            { text: ' absorbs the fireball for the team, taking ', color: COLORS.info },
-                            { text: `${totalDamage} total damage!`, color: COLORS.damage }
-                        ]);
-                        this.checkHeroKO(taunter);
-                        if (taunter.hp > 0 && taunter.abilityId === 'riposte') {
-                            this.handleRiposte(taunter, caster);
-                        }
+                        // The taunter absorbs damage on behalf of all targets.
+                        // We pass the first living target as the "intended" target
+                        // for the dealDamage function to correctly find the taunter.
+                        this.dealDamage(caster, livingTargets[0], totalDamage, 'ability');
                     }
                 } else {
                     livingTargets.forEach(target => {
@@ -1741,16 +1733,7 @@
                             ]);
                             target.smokeBombUsed = true;
                         } else {
-                            target.hp -= damage;
-                            this.log([
-                                { text: 'Fireball hits ', color: COLORS.ability },
-                                { text: target.name, color: COLORS[target.type.toLowerCase()] },
-                                { text: ` for ${damage} damage.`, color: COLORS.damage }
-                            ]);
-                            this.checkHeroKO(target);
-                            if (target.hp > 0 && target.abilityId === 'riposte') {
-                                this.handleRiposte(target, caster);
-                            }
+                            this.dealDamage(caster, target, damage, 'ability');
                         }
                     });
                 }
@@ -1785,18 +1768,8 @@
                         { text: finalTarget.name, color: COLORS[finalTarget.type.toLowerCase()] },
                         { text: '!', color: COLORS.text }
                     ]);
-                } else {
-                    finalTarget.hp -= damage;
-                    this.log([
-                        { text: kaelen.name, color: COLORS[kaelen.type.toLowerCase()] },
-                        { text: "'s arrow hits ", color: COLORS.text },
-                        { text: finalTarget.name, color: COLORS[finalTarget.type.toLowerCase()] },
-                        { text: ` for ${damage} damage.`, color: COLORS.damage }
-                    ]);
-                    this.checkHeroKO(finalTarget);
-                    if (finalTarget.hp > 0 && finalTarget.abilityId === 'riposte') {
-                        this.handleRiposte(finalTarget, kaelen);
-                    }
+                } else if (damage > 0) {
+                    this.dealDamage(kaelen, finalTarget, damage, 'ability');
                 }
                 this.checkGameOver();
             }
@@ -1958,51 +1931,31 @@
 
                 if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'cleave') {
                     this.state.abilityAnimations.push({ type: 'cleave', progress: 0, speed: 0.03 });
-                    this.state.player1Team.forEach(hero => {
-                        if (hero.hp > 0) {
-                            hero.hp -= 4;
-                            this.log([
-                                { text: 'Cleave hits ', color: COLORS.ability },
-                                { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
-                                { text: ' for 4 damage!', color: COLORS.damage }
-                            ]);
-                            this.checkHeroKO(hero);
-                            if (hero.hp > 0 && hero.abilityId === 'riposte') {
-                                this.handleRiposte(hero, p2);
-                            }
-                        }
-                    });
+                    const playerTeam = this.state.player1Team;
+                    const livingHeroes = playerTeam.filter(h => h.hp > 0);
+                    const taunter = livingHeroes.find(h => h.abilityId === 'tank');
+
+                    if (taunter) {
+                        const totalDamage = livingHeroes.length * 4;
+                        this.dealDamage(p2, taunter, totalDamage, 'ability');
+                    } else {
+                        livingHeroes.forEach(hero => {
+                            this.dealDamage(p2, hero, 4, 'ability');
+                        });
+                    }
                 } else if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'intimidation') {
                     this.state.abilityAnimations.push({ type: 'intimidation', progress: 0, speed: 0.03 });
                 } else {
                     this.state.player1Team.forEach(hero => {
                         if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.uuid !== p1.uuid) {
-                            p2.hp -= 2;
-                            this.log([
-                                { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
-                                { text: "'s ", color: COLORS.text },
-                                { text: 'Ambush', color: COLORS.ability },
-                                { text: ' hits ', color: COLORS.text },
-                                { text: p2.name, color: COLORS[p2.type.toLowerCase()] },
-                                { text: ' for 2 damage!', color: COLORS.damage }
-                            ]);
                             this.state.abilityAnimations.push({ type: 'ambush', target: p2, progress: 0, speed: 0.05 });
-                            this.checkHeroKO(p2);
+                            this.dealDamage(hero, p2, 2, 'ability');
                         }
                     });
                     this.state.player2Team.forEach(hero => {
                         if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.uuid !== p2.uuid) {
-                            p1.hp -= 2;
-                             this.log([
-                                { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
-                                { text: "'s ", color: COLORS.text },
-                                { text: 'Ambush', color: COLORS.ability },
-                                { text: ' hits ', color: COLORS.text },
-                                { text: p1.name, color: COLORS[p1.type.toLowerCase()] },
-                                { text: ' for 2 damage!', color: COLORS.damage }
-                            ]);
                             this.state.abilityAnimations.push({ type: 'ambush', target: p1, progress: 0, speed: 0.05 });
-                            this.checkHeroKO(p1);
+                            this.dealDamage(hero, p1, 2, 'ability');
                         }
                     });
                 }
@@ -2103,6 +2056,45 @@
                 return currentAP;
             }
 
+            dealDamage(source, target, amount, damageType = 'attack') {
+                if (amount <= 0 || target.hp <= 0) return;
+
+                const targetTeam = this.state[target.teamKey + 'Team'];
+                let finalTarget = target;
+
+                // The core of the Tank ability logic
+                if (targetTeam && damageType !== 'status') { // Status effects like bleed shouldn't be taunted
+                    const taunter = targetTeam.find(h => h.hp > 0 && h.abilityId === 'tank');
+                    if (taunter && taunter.uuid !== target.uuid) {
+                        this.log([
+                            { text: taunter.name, color: COLORS[taunter.type.toLowerCase()] },
+                            { text: ' absorbs the damage for ', color: COLORS.info },
+                            { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                            { text: '!', color: COLORS.info }
+                        ]);
+                        finalTarget = taunter;
+                    }
+                }
+
+                // Log the damage event
+                const sourceColor = source.type ? COLORS[source.type.toLowerCase()] : COLORS.damage;
+                this.log([
+                    { text: source.name, color: sourceColor },
+                    { text: ` deals ${amount} damage to `, color: COLORS.text },
+                    { text: finalTarget.name, color: COLORS[finalTarget.type.toLowerCase()] },
+                    { text: '!', color: COLORS.text }
+                ]);
+
+                finalTarget.hp -= amount;
+
+                this.checkHeroKO(finalTarget);
+
+                // Handle Riposte ability if the target survives
+                if (finalTarget.hp > 0 && finalTarget.abilityId === 'riposte' && damageType === 'ability') {
+                    this.handleRiposte(finalTarget, source);
+                }
+            }
+
             calculateClashResult(p1, p2) {
                 let p1Damage = this.getHeroCurrentAP(p1, this.state.player1Team);
                 let p2Damage = this.getHeroCurrentAP(p2, this.state.player2Team);
@@ -2134,11 +2126,15 @@
                 }
 
                 let p1Target = p1, p2Target = p2;
-                if (this.state.gamePhase !== 'bossBattle') {
-                    const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p1Taunter && p1Taunter.uuid !== p1.uuid) { p1Target = p1Taunter; this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
-                    const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p2Taunter && p2Taunter.uuid !== p2.uuid) { p2Target = p2Taunter; this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
+                const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                if (p1Taunter && p1Taunter.uuid !== p1.uuid) {
+                    p1Target = p1Taunter;
+                    this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]);
+                }
+                const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                if (p2Taunter && p2Taunter.uuid !== p2.uuid) {
+                    p2Target = p2Taunter;
+                    this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]);
                 }
 
                 let finalP1Damage = p1Damage, finalP2Damage = p2Damage;
@@ -2163,8 +2159,8 @@
                 if (p1.hp <= 0) finalP1Damage = 0;
                 if (p2.hp <= 0) finalP2Damage = 0;
 
-                if(finalP2Damage > 0) { p1Target.hp -= finalP2Damage; this.log([{ text: p2.name, color: COLORS[p2.type.toLowerCase()] }, { text: ` deals ${finalP2Damage} damage to `, color: COLORS.text }, { text: p1Target.name, color: COLORS[p1Target.type.toLowerCase()] }]); this.checkHeroKO(p1Target); }
-                if(finalP1Damage > 0) { p2Target.hp -= finalP1Damage; this.log([{ text: p1.name, color: COLORS[p1.type.toLowerCase()] }, { text: ` deals ${finalP1Damage} damage to `, color: COLORS.text }, { text: p2Target.name, color: COLORS[p2Target.type.toLowerCase()] }]); this.checkHeroKO(p2Target); }
+                if(finalP2Damage > 0) { this.dealDamage(p2, p1Target, finalP2Damage, 'attack'); }
+                if(finalP1Damage > 0) { this.dealDamage(p1, p2Target, finalP1Damage, 'attack'); }
 
                 // Post-clash abilities
                 if (p1.abilityId === 'bleed' && finalP1Damage > 0 && p2Target.hp > 0) { this.applyBleed(p1, p2Target); }
@@ -2175,11 +2171,11 @@
 
                 if (p1.abilityId === 'unstableConcoction' && p1HasAdvantage && p1.hp > 0) {
                     this.log([{ text: p1.name, color: COLORS.magic }, { text: "'s concoction explodes!", color: COLORS.ability }]);
-                    this.state.player2Team.forEach(e => { if (e.hp > 0) { e.hp -= 3; this.log([{ text: `Explosion hits ${e.name} for 3 damage.`, color: COLORS.damage }]); this.checkHeroKO(e); } });
+                    this.state.player2Team.forEach(e => { if (e.hp > 0) { this.dealDamage(p1, e, 3, 'ability'); } });
                 }
                 if (p2.abilityId === 'unstableConcoction' && p2HasAdvantage && p2.hp > 0) {
                     this.log([{ text: p2.name, color: COLORS.magic }, { text: "'s concoction explodes!", color: COLORS.ability }]);
-                    this.state.player1Team.forEach(e => { if (e.hp > 0) { e.hp -= 3; this.log([{ text: `Explosion hits ${e.name} for 3 damage.`, color: COLORS.damage }]); this.checkHeroKO(e); } });
+                    this.state.player1Team.forEach(e => { if (e.hp > 0) { this.dealDamage(p2, e, 3, 'ability'); } });
                 }
                 if (p1.abilityId === 'overload' && p1.hp > 0 && Math.random() < 0.5) this.handleOverload(p1, p2);
                 if (p2.abilityId === 'overload' && p2.hp > 0 && Math.random() < 0.5) this.handleOverload(p2, p1);
@@ -2202,14 +2198,7 @@
                 if (potentialTargets.length > 0) {
                     const overloadTarget = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
                     this.triggerOverloadAnimation(caster, overloadTarget);
-                    overloadTarget.hp -= 4;
-                    this.log([
-                        { text: caster.name, color: COLORS.magic },
-                        { text: "'s Overload zaps ", color: COLORS.ability },
-                        { text: overloadTarget.name, color: COLORS[overloadTarget.type.toLowerCase()] },
-                        { text: ' for 4 damage!', color: COLORS.damage }
-                    ]);
-                    this.checkHeroKO(overloadTarget);
+                    this.dealDamage(caster, overloadTarget, 4, 'ability');
                 } else {
                     this.log([{ text: caster.name, color: COLORS.magic }, { text: "'s Overload fizzles!", color: COLORS.info }]);
                 }
@@ -2217,15 +2206,6 @@
 
             handleRiposte(caster, target) {
                 const damage = 2;
-                target.hp -= damage;
-                this.log([
-                    { text: caster.name, color: COLORS[caster.type.toLowerCase()] },
-                    { text: "'s ", color: COLORS.text },
-                    { text: 'Riposte', color: COLORS.ability },
-                    { text: ' hits ', color: COLORS.text },
-                    { text: target.name, color: COLORS[target.type.toLowerCase()] },
-                    { text: ` for ${damage} damage!`, color: COLORS.damage }
-                ]);
                 const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === caster.uuid);
                 const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === target.uuid);
                 if (casterBox && targetBox) {
@@ -2235,7 +2215,7 @@
                         endX: targetBox.x + targetBox.width / 2, endY: targetBox.y + targetBox.height / 2,
                     });
                 }
-                this.checkHeroKO(target);
+                this.dealDamage(caster, target, damage, 'ability');
             }
 
             handleMadScramble(clashingHero, opposingHero) {
@@ -2304,7 +2284,7 @@
                 const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === target.uuid);
 
                 if (isHeal) {
-                    target.hp += 5;
+                    target.hp = Math.min(target.maxHp, target.hp + 5);
                     this.log([
                         { text: caster.name, color: COLORS.magic },
                         { text: "'s ", color: COLORS.text },
@@ -2314,16 +2294,7 @@
                         { text: ' for 5 HP!', color: '#4CAF50' }
                     ]);
                 } else {
-                    target.hp -= 5;
-                    this.log([
-                        { text: caster.name, color: COLORS.magic },
-                        { text: "'s ", color: COLORS.text },
-                        { text: 'Boon of Bedlam', color: COLORS.ability },
-                        { text: ' zaps ', color: COLORS.text },
-                        { text: target.name, color: COLORS[target.type.toLowerCase()] },
-                        { text: ' for 5 damage!', color: COLORS.damage }
-                    ]);
-                    this.checkHeroKO(target);
+                    this.dealDamage(caster, target, 5, 'ability');
                 }
 
                 if (casterBox && targetBox) {
