@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,7 +13,6 @@
     <meta name="msapplication-navbutton-color" content="#2d2d2d">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-starturl" content="/">
-
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +38,6 @@
 <body>
     <canvas id="gameCanvas"></canvas>
 
-
     <script>
         // ===================================
         //  🎨 1. CONFIGURATION & CONSTANTS
@@ -50,7 +48,7 @@
             cardBorder: '#1a1a1a',
             might: '#9E2B25',   // Deep Red
             finesse: '#00695C', // Teal Green
-            magic: '#4A5D9A',    // Royal Blue
+            magic: '#4A5D9A',   // Royal Blue
             accent: '#FFD700', // Brighter Gold
             disabled: '#424242',
             button: { start: '#8D6E63', end: '#5D4037' }, // Wood Brown Gradient
@@ -58,9 +56,8 @@
             buttonBorder: '#3E2723', // Darker Wood
             damage: '#FF7043', // Orange-Red for damage
             ability: '#4FC3F7', // Light Blue for abilities
-            info: '#BDBDBD'   // Gray for general info
+            info: '#BDBDBD'     // Gray for general info
         };
-
 
         const HEROES = [
             // Might Heroes
@@ -69,7 +66,7 @@
             { id: 6, name: 'Boro the Bulwark', type: 'Might', hp: 10, ap: 4, abilityId: 'tank', description: 'Tank: Boro absorbs all damage for his allies.' },
             { id: 9, name: 'Skeleton Warrior', type: 'Might', hp: 10, ap: 4, abilityId: null, description: 'A sturdy and reliable frontline soldier.' },
             { id: 12, name: 'Goblin Brawler', type: 'Might', hp: 9, ap: 5, abilityId: 'mobRule', description: 'Mob Rule: Gains +1 AP for each other living Goblin ally.' },
-
+            { id: 15, name: 'Karn the Barbed', type: 'Might', hp: 9, ap: 5, abilityId: 'bleed', description: 'Bleed: A successful hit causes the target to take damage at the start of each round.', detailedDescription: 'Bleed: A successful hit causes the target to take damage at the start of each round. This effect stacks up to 3 times.' },
 
             // Finesse Heroes
             { id: 2, name: 'Vex', type: 'Finesse', hp: 7, ap: 7, abilityId: 'firstStrike', description: 'First Strike: Attacks first. If she defeats the opponent, she takes no damage.' },
@@ -77,21 +74,23 @@
             { id: 7, name: 'Lyra Nightwind', type: 'Finesse', hp: 8, ap: 6, abilityId: 'smokeBomb', description: 'Smoke Bomb: The first attack against Lyra misses.' },
             { id: 10, name: 'Skeleton Archer', type: 'Finesse', hp: 7, ap: 7, abilityId: null, description: 'A balanced archer with no special tricks.' },
             { id: 13, name: 'Goblin Cutpurse', type: 'Finesse', hp: 7, ap: 7, abilityId: 'ambush', description: 'Ambush: Deals 2 damage to the clashing enemy when on the bench.' },
-
+            { id: 16, name: 'Seraphina', type: 'Finesse', hp: 7, ap: 7, abilityId: 'riposte', description: 'Riposte: When hit by an ability while not clashing, deals 2 damage back to the attacker.' },
+            { id: 20, name: 'Zephyr, the Tempest', type: 'Finesse', hp: 8, ap: 6, abilityId: 'galeForce', description: 'Gale Force: Before clashing, swaps the enemy with a random teammate on their bench.' },
 
             // Magic Heroes
             { id: 4, name: 'Elara', type: 'Magic', hp: 6, ap: 8, abilityId: 'soulSiphon', description: 'Soul Siphon: The first time Elara defeats an enemy, she gains their max HP.' },
             { id: 5, name: 'Zoltan', type: 'Magic', hp: 5, ap: 9, abilityId: 'overload', description: 'Overload: 50% chance to deal 4 damage to another random enemy or himself.' },
             { id: 8, name: 'Master Theron', type: 'Magic', hp: 7, ap: 7, abilityId: 'fireball', description: 'Fireball: On round 5, deals 5 damage to all enemies.' },
             { id: 11, name: 'Skeleton Mage', type: 'Magic', hp: 4, ap: 10, abilityId: null, description: 'A frail but powerful spellcaster.' },
-            { id: 14, name: 'Goblin Bomber', type: 'Magic', hp: 4, ap: 10, abilityId: 'unstableConcoction', description: 'Unstable Concoction: With advantage, explodes, dealing 3 damage to all enemies.' }
+            { id: 14, name: 'Goblin Bomber', type: 'Magic', hp: 4, ap: 10, abilityId: 'unstableConcoction', description: 'Unstable Concoction: With advantage, explodes, dealing 3 damage to all enemies.' },
+            { id: 17, name: 'Malachi the Gambler', type: 'Magic', hp: 5, ap: 0, abilityId: 'chaosBolt', description: 'Chaos Bolt: Deals 6-18 true damage that cannot be reduced.' },
+            { id: 18, name: 'Gyrion the Trickster', type: 'Magic', hp: 6, ap: 8, abilityId: 'madScramble', description: 'Mad Scramble: After attacking, swaps the positions of two random heroes on the board.' },
+            { id: 19, name: 'Jester of Chaos', type: 'Magic', hp: 7, ap: 7, abilityId: 'boonOfBedlam', description: 'Boon of Bedlam: After attacking, the bolt leaps to another random hero, either dealing 5 damage or healing 5 HP.' }
         ];
-
 
         const BOSSES = [
             { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
-
 
         // ===================================
         //  ⚔️ 2. GAME CLASS
@@ -111,13 +110,10 @@
                 this.buttonHitboxes = {};
                 this.mousePos = { x: 0, y: 0 };
 
-
                 this.state = this.getInitialState();
-
 
                 this.init();
             }
-
 
             // -----------------------------------
             //  Initialization
@@ -129,7 +125,6 @@
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 this.gameLoop();
             }
-
 
             getInitialState() {
                 return {
@@ -155,6 +150,7 @@
                     battleLog: [[]],
                     confettiParticles: [],
                     bossActiveAbility: null,
+                    nextUUID: 1, // Unique ID counter for hero instances
                 };
             }
             
@@ -163,6 +159,12 @@
                 this.log([{ text: 'Welcome! Select a hero to begin.', color: COLORS.info }]);
             }
 
+            initializeTeam(team, teamKey) {
+                team.forEach(hero => {
+                    hero.statusEffects = [];
+                    hero.teamKey = teamKey;
+                });
+            }
 
             startBossBattle() {
                 this.state.teamSize = 5;
@@ -171,15 +173,17 @@
                     return;
                 }
                 this.state.player2Team = [JSON.parse(JSON.stringify(BOSSES[0]))];
+                this.state.player2Team[0].uuid = this.state.nextUUID++;
+
+                this.initializeTeam(this.state.player1Team, 'player1');
+                this.initializeTeam(this.state.player2Team, 'player2');
                 this.state.gamePhase = 'bossBattle';
                 this.log([{ text: 'BOSS BATTLE! The Minotaur appears!', color: COLORS.might }]);
                 this.log([{ text: 'Select a hero to face the beast.', color: COLORS.info }]);
             }
 
-
             startGame(isPractice = false) {
                 if (this.state.player1Team.length !== this.state.teamSize) return;
-
 
                 if (!isPractice) {
                     const deepCopyHeroes = JSON.parse(JSON.stringify(HEROES));
@@ -191,7 +195,6 @@
                     } else {
                         const playerHeroIds = this.state.player1Team.map(h => h.id);
                         let remainingHeroes = deepCopyHeroes.filter(hero => !playerHeroIds.includes(hero.id));
-
 
                         if (this.state.difficulty === 'expert') {
                             const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
@@ -232,10 +235,18 @@
                     }
                 }
                 
+                this.state.player2Team.forEach(hero => {
+                    if (!hero.uuid) {
+                        hero.uuid = this.state.nextUUID++;
+                    }
+                });
+
+                this.initializeTeam(this.state.player1Team, 'player1');
+                this.initializeTeam(this.state.player2Team, 'player2');
+
                 this.state.gamePhase = 'playing';
                 this.log([{ text: 'Select one of your heroes to clash.', color: COLORS.info }]);
             }
-
 
             // -----------------------------------
             //  Game Loop & Drawing
@@ -248,7 +259,6 @@
             
             update() {
                 const speedMultiplier = 0.4;
-
 
                 if (this.state.animation) {
                     const anim = this.state.animation;
@@ -267,14 +277,12 @@
                     }
                 }
 
-
                 if (this.state.fireballAnimation) {
                     this.state.fireballAnimation.progress += 0.025 * speedMultiplier;
                     if (this.state.fireballAnimation.progress >= 1) {
                         this.state.fireballAnimation = null;
                     }
                 }
-
 
                 if (this.state.overloadAnimation) {
                     this.state.overloadAnimation.progress += 0.075 * speedMultiplier;
@@ -285,7 +293,6 @@
                 
                 this.state.abilityAnimations.forEach(anim => anim.progress += anim.speed * speedMultiplier);
                 this.state.abilityAnimations = this.state.abilityAnimations.filter(anim => anim.progress < 1);
-
 
                 this.state.player1Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
                 this.state.player2Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
@@ -311,7 +318,6 @@
                 }
             }
 
-
             draw() {
                 this.ctx.fillStyle = COLORS.background;
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -319,26 +325,24 @@
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
                 this.buttonHitboxes = {};
 
-
                 switch(this.state.gamePhase) {
                     case 'mainMenu': this.drawMainMenuScreen(); break;
                     case 'difficultySelection': this.drawDifficultySelectionScreen(); break;
                     case 'heroSelection': this.drawHeroSelectionScreen(); break;
                     case 'practiceSelection': this.drawPracticeSelectionScreen(); break;
                     case 'heroViewer': this.drawHeroViewerScreen(); break;
+                    case 'howToPlay': this.drawHowToPlayScreen(); break;
                     case 'playing':
                     case 'bossBattle': this.drawPlayingScreen(); break;
                     case 'gameOver': this.drawGameOver(); break;
                     case 'expertVictory': this.drawExpertVictoryScreen(); break;
                 }
 
-
                 if (this.state.hoveredHero) {
                     const { x, y, hero, team } = this.state.hoveredHero;
                     this.drawCard(x, y, hero, 'hover', team, 1.5);
                 }
             }
-
 
             drawPlayingScreen() {
                 this.drawTeam(this.state.player2Team, 'player2');
@@ -357,7 +361,6 @@
                 if (this.state.fireballAnimation) this.drawFireballAnimation();
                 if (this.state.overloadAnimation) this.drawOverloadAnimation();
 
-
                 this.state.abilityAnimations.forEach(anim => {
                     if(anim.type === 'smokeBomb') this.drawSmokeBombAnimation(anim);
                     if(anim.type === 'longBow') this.drawLongBowAnimation(anim);
@@ -366,17 +369,19 @@
                     if(anim.type === 'cleave') this.drawCleaveAnimation(anim);
                     if(anim.type === 'intimidation') this.drawIntimidationAnimation(anim);
                     if(anim.type === 'advantage') this.drawAdvantageIndicator(anim);
+                    if(anim.type === 'bleed') this.drawBleedAnimation(anim);
+                    if(anim.type === 'riposte') this.drawRiposteAnimation(anim);
+                    if(anim.type === 'cardSwap') this.drawCardSwapAnimation(anim);
+                    if(anim.type === 'boonOfBedlam') this.drawBoonOfBedlamAnimation(anim);
+                    if(anim.type === 'galeForce') this.drawGaleForceAnimation(anim);
                 });
-
 
                 this.drawRoundCounter();
             }
 
-
             // -----------------------------------
             //  Drawing Helpers
             // -----------------------------------
-
 
             wrapText(text, x, y, maxWidth, lineHeight) {
                 const words = text.split(' ');
@@ -403,7 +408,6 @@
                 const y = this.canvas.height - logHeight;
                 const height = logHeight - (10 * this.scale);
 
-
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 this.ctx.strokeStyle = COLORS.buttonBorder;
                 this.ctx.lineWidth = 2 * this.scale;
@@ -412,24 +416,19 @@
                 this.ctx.fill();
                 this.ctx.stroke();
 
-
                 this.ctx.fillStyle = COLORS.accent;
                 this.ctx.font = `bold ${20 * this.scale}px 'Cinzel'`;
                 this.ctx.textAlign = 'left';
                 this.ctx.fillText('Battle Log', x + (15 * this.scale), y + (25 * this.scale));
 
-
                 let logY = y + height - (15 * this.scale);
                 const lineHeight = 18 * this.scale;
                 const padding = 15 * this.scale;
 
-
                 const logsToDraw = this.state.battleLog.slice().reverse();
-
 
                 for (const [roundIndex, roundLog] of logsToDraw.entries()) {
                     if (logY < y + (35 * this.scale)) break;
-
 
                     for (let i = roundLog.length - 1; i >= 0; i--) {
                         if (logY < y + (40 * this.scale)) break;
@@ -445,7 +444,6 @@
                         logY -= lineHeight;
                     }
 
-
                     if (logY < y + (35 * this.scale)) break;
                     const roundNumber = this.state.round - roundIndex;
                     if (roundNumber > 0) {
@@ -457,7 +455,6 @@
                     }
                 }
             }
-
 
             drawTeam(team, playerKey) {
                 const isBoss = team.length === 1 && team[0].abilities;
@@ -484,19 +481,19 @@
                 this.ctx.fillText(title, startX + totalWidth / 2, y - (20 * this.scale));
                 this.ctx.shadowBlur = 0;
 
-
                 team.forEach((hero, index) => {
                     const x = startX + index * (cardWidth + spacing);
                     const hitbox = { x, y, width: cardWidth, height: cardHeight, hero };
                     this.cardHitboxes[playerKey].push(hitbox);
                     const isAnimating = this.state.animation?.type === 'clash' &&
-                                        (this.state.animation.p1.id === hero.id || this.state.animation.p2.id === hero.id);
-                    if (!isAnimating) {
+                                        (this.state.animation.p1.uuid === hero.uuid || this.state.animation.p2.uuid === hero.uuid);
+                    const isSwapping = this.state.abilityAnimations.some(a => a.type === 'cardSwap' && (a.hero1.uuid === hero.uuid || a.hero2.uuid === hero.uuid));
+
+                    if (!isAnimating && !isSwapping) {
                         this.drawCard(x, y, hero, playerKey, team, cardScaleFactor);
                     }
                 });
             }
-
 
             drawCard(x, y, hero, playerKey, team = [], customScale = 1) {
                 this.ctx.save();
@@ -504,7 +501,6 @@
                 const cardWidth = this.baseCardWidth * this.scale * customScale;
                 const cardHeight = this.baseCardHeight * this.scale * customScale;
                 const padding = 15 * this.scale * customScale;
-
 
                 if (hero.deathAnimation) {
                     const progress = hero.deathAnimation.progress;
@@ -515,12 +511,10 @@
                     this.ctx.globalAlpha = 1 - progress;
                 }
 
-
                 this.ctx.fillStyle = hero.hp > 0 ? COLORS[hero.type.toLowerCase()] : COLORS.disabled;
                 this.ctx.beginPath();
                 this.ctx.roundRect(x, y, cardWidth, cardHeight, [10 * this.scale * customScale]);
                 this.ctx.fill();
-
 
                 if (hero.hp > 0) {
                     const gradient = this.ctx.createRadialGradient(
@@ -533,12 +527,16 @@
                     this.ctx.fill();
                 }
 
-
-                const isSelected = (this.state.player1Selection?.id === hero.id) ||
-                                 (this.state.player2Selection?.id === hero.id) ||
-                                 (this.state.gamePhase === 'heroSelection' && this.state.player1Team.some(h => h.id === hero.id)) ||
-                                 (this.state.gamePhase === 'practiceSelection' && (this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team).some(h => h.id === hero.id));
-
+                let isSelected = false;
+                if (this.state.gamePhase === 'heroSelection' || this.state.gamePhase === 'practiceSelection') {
+                    const teamToCheck = this.state.gamePhase === 'heroSelection' 
+                        ? this.state.player1Team 
+                        : (this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team);
+                    isSelected = teamToCheck.some(h => h.id === hero.id);
+                } else {
+                    isSelected = (this.state.player1Selection && this.state.player1Selection.uuid === hero.uuid) ||
+                                 (this.state.player2Selection && this.state.player2Selection.uuid === hero.uuid);
+                }
 
                 if (isSelected && hero.hp > 0) {
                     this.ctx.strokeStyle = COLORS.accent;
@@ -552,7 +550,6 @@
                 this.ctx.stroke();
                 this.ctx.shadowBlur = 0;
 
-
                 this.ctx.globalAlpha = hero.deathAnimation ? 1 - hero.deathAnimation.progress : 1;
                 
                 this.ctx.fillStyle = COLORS.text;
@@ -563,29 +560,38 @@
                 const iconSize = 30 * this.scale * customScale;
                 this.drawTypeIcon(hero.type, x + cardWidth / 2, y + padding + (45 * this.scale * customScale), iconSize);
 
-
                 const statY = y + cardHeight - padding - (55 * this.scale * customScale);
                 const iconStatSize = 24 * this.scale * customScale;
                 this.drawHeartIcon(x + padding, statY, iconStatSize, iconStatSize);
                 this.drawAPSwordIcon(x + cardWidth - padding - iconStatSize, statY, iconStatSize, iconStatSize);
-
 
                 const currentAP = this.getHeroCurrentAP(hero, team);
                 this.ctx.font = `bold ${28 * this.scale * customScale}px 'MedievalSharp'`;
                 this.ctx.textAlign = 'left';
                 this.ctx.fillText(`${hero.hp}`, x + padding + iconStatSize + (5 * this.scale * customScale), statY + iconStatSize * 0.8);
                 this.ctx.textAlign = 'right';
-                this.ctx.fillText(`${currentAP}`, x + cardWidth - padding - iconStatSize - (5 * this.scale * customScale), statY + iconStatSize * 0.8);
+                this.ctx.fillText(`${hero.abilityId === 'chaosBolt' ? '6-18' : currentAP}`, x + cardWidth - padding - iconStatSize - (5 * this.scale * customScale), statY + iconStatSize * 0.8);
                 
                 this.ctx.textAlign = 'center';
                 this.ctx.font = `italic ${14 * this.scale * customScale}px 'MedievalSharp'`;
-                this.wrapText(hero.description || '', x + cardWidth / 2, y + cardHeight / 2 - (10 * this.scale * customScale), cardWidth - padding * 1.5, 16 * this.scale * customScale);
+                const descriptionToDraw = (playerKey === 'viewer' && hero.detailedDescription) ? hero.detailedDescription : hero.description;
+                this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight / 2 - (10 * this.scale * customScale), cardWidth - padding * 1.5, 16 * this.scale * customScale);
                 
+                if (hero.statusEffects && hero.statusEffects.length > 0) {
+                    const bleedEffect = hero.statusEffects.find(e => e.type === 'bleed');
+                    if (bleedEffect) {
+                        const bleedIconX = x + cardWidth - padding - (10 * this.scale * customScale);
+                        const bleedIconY = y + padding + (10 * this.scale * customScale);
+                        this.ctx.fillStyle = COLORS.might;
+                        this.ctx.font = `bold ${20 * this.scale * customScale}px 'MedievalSharp'`;
+                        this.ctx.fillText(`🩸${bleedEffect.damage}`, bleedIconX, bleedIconY);
+                    }
+                }
+
                 if (hero.hp <= 0) {
                     this.ctx.globalAlpha = hero.deathAnimation ? hero.deathAnimation.progress * 0.8 : 0.8;
                     this.drawSkullIcon(x + cardWidth / 2, y + cardHeight / 2, cardWidth * 0.5);
                 }
-
 
                 this.ctx.restore();
             }
@@ -594,21 +600,17 @@
                 const anim = this.state.animation;
                 if (!anim) return;
 
-
                 const { p1, p2, p1StartPos, p2StartPos } = anim;
                 const cardWidth = this.baseCardWidth * this.scale;
                 const cardHeight = this.baseCardHeight * this.scale;
-
 
                 const p1MeetX = this.canvas.width / 2 - cardWidth;
                 const p1MeetY = this.canvas.height / 2 - cardHeight / 2;
                 const p2MeetX = this.canvas.width / 2;
                 const p2MeetY = this.canvas.height / 2 - cardHeight / 2;
 
-
                 let p1CurrentX, p1CurrentY, p2CurrentX, p2CurrentY;
                 const rawProgress = anim.progress;
-
 
                 if (rawProgress < 0.5) {
                     const phaseProgress = rawProgress / 0.5;
@@ -623,11 +625,9 @@
                     p2CurrentX = p2MeetX;
                     p2CurrentY = p2MeetY;
 
-
                     const lungePhaseProgress = (rawProgress - 0.5) / 0.5;
                     const lungeFactor = Math.sin(lungePhaseProgress * Math.PI);
                     const lungeDistance = 50 * this.scale * lungeFactor;
-
 
                     p1CurrentX += lungeDistance;
                     p2CurrentX -= lungeDistance;
@@ -642,13 +642,11 @@
                 const lungeProgress = Math.max(0, (rawProgress - 0.5) / 0.5);
                 const shakeAngle = Math.sin(lungeProgress * Math.PI * 4) * 0.05;
 
-
                 this.ctx.save();
                 this.ctx.translate(p1CurrentX + cardWidth/2, p1CurrentY + cardHeight/2);
                 this.ctx.rotate(shakeAngle);
                 this.drawCard(-cardWidth/2, -cardHeight/2, p1, 'player1', this.state.player1Team);
                 this.ctx.restore();
-
 
                 this.ctx.save();
                 this.ctx.translate(p2CurrentX + cardWidth/2, p2CurrentY + cardHeight/2);
@@ -657,27 +655,22 @@
                 this.ctx.restore();
             }
 
-
             drawImpactAnimation() {
                 const anim = this.state.impactAnimation;
                 if (!anim) return;
 
-
                 const progress = anim.progress;
                 const flash = Math.sin(progress * Math.PI);
-
 
                 this.ctx.save();
                 this.ctx.translate(anim.x, anim.y);
                 this.ctx.globalAlpha = flash;
-
 
                 this.ctx.strokeStyle = 'white';
                 this.ctx.lineWidth = (5 * (1 - progress)) * this.scale;
                 this.ctx.beginPath();
                 this.ctx.arc(0, 0, anim.radius * progress, 0, 2 * Math.PI);
                 this.ctx.stroke();
-
 
                 this.ctx.strokeStyle = COLORS.accent;
                 this.ctx.lineWidth = (15 * (1 - progress)) * this.scale;
@@ -694,11 +687,9 @@
                 this.ctx.restore();
             }
 
-
             drawFireballAnimation() {
                 const anim = this.state.fireballAnimation;
                 if (!anim) return;
-
 
                 const cardWidth = this.baseCardWidth * this.scale;
                 this.cardHitboxes[anim.targetTeamKey].forEach((hitbox, index) => {
@@ -717,7 +708,6 @@
                     }
                 });
             }
-
 
             drawOverloadAnimation() {
                 const anim = this.state.overloadAnimation;
@@ -739,9 +729,8 @@
                 this.ctx.restore();
             }
 
-
             drawLastStandAnimation(anim) {
-                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.hero.id);
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === anim.hero.uuid);
                 if (!heroBox) return;
                 const progress = anim.progress;
                 const opacity = Math.sin(progress * Math.PI);
@@ -756,9 +745,8 @@
                 this.ctx.restore();
             }
 
-
             drawSmokeBombAnimation(anim) {
-                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.hero.id);
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === anim.hero.uuid);
                 if (!heroBox) return;
                 const progress = anim.progress;
                 const opacity = Math.sin(progress * Math.PI);
@@ -775,7 +763,6 @@
                 }
                 this.ctx.restore();
             }
-
 
             drawLongBowAnimation(anim) {
                 const progress = anim.progress;
@@ -803,9 +790,8 @@
                 this.ctx.restore();
             }
 
-
             drawAmbushAnimation(anim) {
-                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === anim.target.id);
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === anim.target.uuid);
                 if (!heroBox) return;
                 const progress = anim.progress;
                 const opacity = Math.sin(progress * Math.PI);
@@ -823,7 +809,6 @@
                 this.ctx.restore();
             }
 
-
             drawCleaveAnimation(anim) {
                 const bossBox = this.cardHitboxes.player2[0];
                 if (!bossBox) return;
@@ -840,7 +825,6 @@
                 this.ctx.restore();
             }
 
-
             drawIntimidationAnimation(anim) {
                 const bossBox = this.cardHitboxes.player2[0];
                 if (!bossBox) return;
@@ -855,7 +839,6 @@
                 this.ctx.fill();
                 this.ctx.restore();
             }
-
 
             drawAdvantageIndicator(anim) {
                 const { hitbox, color } = anim;
@@ -878,6 +861,95 @@
                 this.ctx.restore();
             }
 
+            drawBleedAnimation(anim) {
+                const heroBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === anim.hero.uuid);
+                if (!heroBox) return;
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.fillStyle = COLORS.might;
+                const dropY = heroBox.y + (heroBox.height * progress);
+                this.ctx.beginPath();
+                this.ctx.moveTo(heroBox.x + heroBox.width / 2, dropY);
+                this.ctx.quadraticCurveTo(heroBox.x + heroBox.width * 0.3, dropY + 15 * this.scale, heroBox.x + heroBox.width / 2, dropY + 30 * this.scale);
+                this.ctx.quadraticCurveTo(heroBox.x + heroBox.width * 0.7, dropY + 15 * this.scale, heroBox.x + heroBox.width / 2, dropY);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
+
+            drawRiposteAnimation(anim) {
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                const currentX = anim.startX + (anim.endX - anim.startX) * progress;
+                const currentY = anim.startY + (anim.endY - anim.startY) * progress;
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.strokeStyle = COLORS.accent;
+                this.ctx.lineWidth = 8 * this.scale * (1 - progress);
+                this.ctx.beginPath();
+                this.ctx.moveTo(currentX - 20 * this.scale, currentY - 20 * this.scale);
+                this.ctx.lineTo(currentX + 20 * this.scale, currentY + 20 * this.scale);
+                this.ctx.moveTo(currentX + 20 * this.scale, currentY - 20 * this.scale);
+                this.ctx.lineTo(currentX - 20 * this.scale, currentY + 20 * this.scale);
+                this.ctx.stroke();
+                this.ctx.restore();
+            }
+
+            drawCardSwapAnimation(anim) {
+                const { hero1, hero2, startPos1, startPos2, progress } = anim;
+                const easeInOut = t => t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+                const easedProgress = easeInOut(progress);
+
+                const x1 = startPos1.x + (startPos2.x - startPos1.x) * easedProgress;
+                const y1 = startPos1.y + (startPos2.y - startPos1.y) * easedProgress;
+                const x2 = startPos2.x + (startPos1.x - startPos2.x) * easedProgress;
+                const y2 = startPos2.y + (startPos1.y - startPos2.y) * easedProgress;
+                
+                const cardScaleFactor = this.state.teamSize === 5 ? 0.8 : 1;
+
+                this.drawCard(x1, y1, hero1, 'player2', this.state.player2Team, cardScaleFactor);
+                this.drawCard(x2, y2, hero2, 'player1', this.state.player1Team, cardScaleFactor);
+            }
+
+            drawBoonOfBedlamAnimation(anim) {
+                const { startX, startY, endX, endY, isHeal } = anim;
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                const currentX = startX + (endX - startX) * progress;
+                const currentY = startY + (endY - startY) * progress;
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.fillStyle = isHeal ? '#4CAF50' : COLORS.damage;
+                this.ctx.beginPath();
+                this.ctx.arc(currentX, currentY, 20 * this.scale * progress, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.restore();
+            }
+
+            drawGaleForceAnimation(anim) {
+                const { box1, box2 } = anim;
+                const progress = anim.progress;
+                const opacity = Math.sin(progress * Math.PI);
+                this.ctx.save();
+                this.ctx.globalAlpha = opacity;
+                this.ctx.strokeStyle = COLORS.finesse;
+                this.ctx.lineWidth = 10 * this.scale * (1 - progress);
+
+                [box1, box2].forEach(box => {
+                    const centerX = box.x + box.width / 2;
+                    const centerY = box.y + box.height / 2;
+                    const radius = box.width * 0.7 * progress;
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2 * progress);
+                    this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.arc(centerX, centerY, radius * 0.6, 0, -Math.PI * 2 * progress, true);
+                    this.ctx.stroke();
+                });
+
+                this.ctx.restore();
+            }
 
             drawButton(hitboxKey, text, colorScheme) {
                 const hitbox = this.buttonHitboxes[hitboxKey];
@@ -905,7 +977,6 @@
                 this.ctx.textBaseline = 'alphabetic';
             }
 
-
             drawClashButton() {
                 if (!this.state.player1Selection || this.state.isClashing || this.state.winner) return;
                 const buttonWidth = 200 * this.scale;
@@ -916,7 +987,6 @@
                 this.drawButton('clash', 'CLASH!', {start: COLORS.accent, end: '#B8860B'});
             }
 
-
             drawBackButton() {
                 const buttonWidth = 200 * this.scale;
                 const buttonHeight = 60 * this.scale;
@@ -925,7 +995,6 @@
                 this.buttonHitboxes.backToMenu = { x, y, width: buttonWidth, height: buttonHeight };
                 this.drawButton('backToMenu', 'Main Menu', {start: COLORS.might, end: COLORS.might});
             }
-
 
             drawRoundCounter() {
                 this.ctx.fillStyle = COLORS.text;
@@ -937,7 +1006,6 @@
                 this.ctx.fillText(`Round ${this.state.round}`, x, 40 * this.scale);
                 this.ctx.shadowBlur = 0;
             }
-
 
             drawGameOver() {
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -954,7 +1022,6 @@
                 this.buttonHitboxes.playAgain = { x, y, width: buttonWidth, height: buttonHeight };
                 this.drawButton('playAgain', 'Main Menu', COLORS.button);
             }
-
 
             drawExpertVictoryScreen() {
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -1022,7 +1089,6 @@
                 this.ctx.restore();
             }
 
-
             drawMainMenuScreen() {
                 this.ctx.fillStyle = COLORS.text;
                 this.ctx.font = `bold ${80 * this.scale}px "Cinzel"`;
@@ -1042,7 +1108,7 @@
                 this.ctx.fillText(remainingText, startX + swordWidth, titleY);
                 this.ctx.textAlign = 'center';
                 this.ctx.shadowBlur = 0;
-                const menuItems = ['3v3 Clash', '5v5 Clash', 'Boss Battle', 'Practice', 'Hero Viewer'];
+                const menuItems = ['3v3 Clash', '5v5 Clash', 'Boss Battle', 'Practice', 'Hero Viewer', 'How to Play'];
                 const buttonWidth = 300 * this.scale;
                 const buttonHeight = 80 * this.scale;
                 const spacing = 30 * this.scale;
@@ -1056,7 +1122,6 @@
                     this.drawButton(key, item, COLORS.button);
                 });
             }
-
 
             drawDifficultySelectionScreen() {
                 this.ctx.fillStyle = COLORS.text;
@@ -1079,12 +1144,12 @@
                 this.drawBackButton();
             }
 
-
             drawHeroSelectionScreen() {
                 const cardWidth = this.baseCardWidth * this.scale;
                 const cardHeight = this.baseCardHeight * this.scale;
                 const spacing = 20 * this.scale;
                 const allHeroes = JSON.parse(JSON.stringify(HEROES));
+                
                 this.ctx.fillStyle = COLORS.text;
                 this.ctx.textAlign = 'center';
                 this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
@@ -1108,7 +1173,7 @@
                     const x = startX + col * (cardWidth + spacing);
                     const y = startY + row * (cardHeight + rowSpacing);
                     this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
-                    this.drawCard(x, y, hero, 'selection');
+                    this.drawCard(x, y, hero, 'heroSelection');
                 });
                 if (this.state.player1Team.length === this.state.teamSize) {
                     const buttonWidth = 300 * this.scale;
@@ -1122,12 +1187,12 @@
                 this.drawBackButton();
             }
 
-
             drawPracticeSelectionScreen() {
                 const cardWidth = this.baseCardWidth * this.scale;
                 const cardHeight = this.baseCardHeight * this.scale;
                 const spacing = 20 * this.scale;
                 const allHeroes = JSON.parse(JSON.stringify(HEROES));
+
                 this.ctx.fillStyle = COLORS.text;
                 this.ctx.textAlign = 'center';
                 const title = this.state.practiceSelectionState === 'player' ? 'Choose Your Team' : 'Choose Opponent\'s Team';
@@ -1153,7 +1218,7 @@
                     const x = startX + col * (cardWidth + spacing);
                     const y = startY + row * (cardHeight + rowSpacing);
                     this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
-                    this.drawCard(x, y, hero, 'selection');
+                    this.drawCard(x, y, hero, 'practiceSelection');
                 });
                 if (team.length === this.state.teamSize) {
                     const buttonWidth = 300 * this.scale;
@@ -1166,7 +1231,6 @@
                 }
                 this.drawBackButton();
             }
-
 
             drawHeroViewerScreen() {
                 const cardWidth = this.baseCardWidth * this.scale * 2;
@@ -1190,6 +1254,73 @@
                 this.drawButton('back', 'Back', {start: COLORS.might, end: COLORS.might});
             }
 
+            drawHowToPlayScreen() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+                this.ctx.font = `bold ${60 * this.scale}px "Cinzel"`;
+                this.ctx.fillText('How to Play', this.canvas.width / 2, 120 * this.scale);
+
+                const contentWidth = this.canvas.width * 0.6;
+                const startX = (this.canvas.width - contentWidth) / 2;
+                let currentY = 200 * this.scale;
+                const lineHeight = 40 * this.scale;
+
+                this.ctx.font = `bold ${32 * this.scale}px "Cinzel"`;
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.fillText('The Goal', this.canvas.width / 2, currentY);
+                currentY += lineHeight * 1.2;
+                this.ctx.font = `${24 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillStyle = COLORS.text;
+                this.wrapText("Defeat all of the opponent's heroes to win the clash.", this.canvas.width / 2, currentY, contentWidth, lineHeight * 0.8);
+                currentY += lineHeight * 2.5;
+
+                this.ctx.font = `bold ${32 * this.scale}px "Cinzel"`;
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.fillText('Trinity Advantage', this.canvas.width / 2, currentY);
+                currentY += lineHeight * 1.2;
+                this.ctx.font = `${24 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillStyle = COLORS.text;
+                this.wrapText("Each hero has a type: Might, Finesse, or Magic. Types have advantages over others, doubling your damage and halving the opponent's!", this.canvas.width / 2, currentY, contentWidth, lineHeight * 0.8);
+                currentY += lineHeight * 2;
+                
+                const iconSize = 50 * this.scale;
+                const iconY = currentY + iconSize / 2;
+                const advantageX = this.canvas.width / 2 - 150 * this.scale;
+                this.drawTypeIcon('Might', advantageX, iconY, iconSize);
+                this.ctx.fillText('>', advantageX + 75 * this.scale, iconY + 15 * this.scale);
+                this.drawTypeIcon('Finesse', advantageX + 150 * this.scale, iconY, iconSize);
+                
+                this.drawTypeIcon('Finesse', advantageX + 300 * this.scale, iconY, iconSize);
+                this.ctx.fillText('>', advantageX + 375 * this.scale, iconY + 15 * this.scale);
+                this.drawTypeIcon('Magic', advantageX + 450 * this.scale, iconY, iconSize);
+                currentY += lineHeight * 2.5;
+
+                this.drawTypeIcon('Magic', this.canvas.width / 2 - 75 * this.scale, iconY + 100 * this.scale, iconSize);
+                this.ctx.fillText('>', this.canvas.width / 2, iconY + 115 * this.scale);
+                this.drawTypeIcon('Might', this.canvas.width / 2 + 75 * this.scale, iconY + 100 * this.scale, iconSize);
+                currentY += lineHeight * 4;
+
+                this.ctx.font = `bold ${32 * this.scale}px "Cinzel"`;
+                this.ctx.fillStyle = COLORS.accent;
+                this.ctx.fillText('The Clash', this.canvas.width / 2, currentY);
+                currentY += lineHeight * 1.2;
+                this.ctx.font = `${24 * this.scale}px "MedievalSharp"`;
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText("1. Select one of your available heroes.", startX, currentY);
+                currentY += lineHeight;
+                this.ctx.fillText("2. Click the 'CLASH!' button to begin combat.", startX, currentY);
+                currentY += lineHeight;
+                this.ctx.fillText("3. Your hero will fight a hero chosen by the opponent.", startX, currentY);
+                currentY += lineHeight * 2;
+
+                const buttonWidth = 250 * this.scale;
+                const buttonHeight = 70 * this.scale;
+                const btnX = (this.canvas.width - buttonWidth) / 2;
+                const btnY = this.canvas.height - buttonHeight - 50 * this.scale;
+                this.buttonHitboxes.back = { x: btnX, y: btnY, width: buttonWidth, height: buttonHeight };
+                this.drawButton('back', 'Back to Menu', {start: COLORS.might, end: COLORS.might});
+            }
 
             drawHeartIcon(x, y, width, height) {
                 this.ctx.save();
@@ -1205,7 +1336,6 @@
                 this.ctx.stroke();
                 this.ctx.restore();
             }
-
 
             drawAPSwordIcon(x, y, width, height) {
                 this.ctx.save();
@@ -1226,7 +1356,6 @@
                 this.ctx.strokeRect(x + width * 0.35, y + height * 0.75, width * 0.3, height * 0.25);
                 this.ctx.restore();
             }
-
 
             drawTypeIcon(type, x, y, size) {
                 this.ctx.save();
@@ -1258,7 +1387,6 @@
                 this.ctx.restore();
             }
 
-
             drawSkullIcon(x, y, size) {
                 this.ctx.save();
                 this.ctx.fillStyle = 'rgba(20, 20, 20, 0.8)';
@@ -1274,14 +1402,12 @@
                 this.ctx.fill();
                 this.ctx.stroke();
 
-
                 // Eyes
                 this.ctx.fillStyle = '#000';
                 this.ctx.beginPath();
                 this.ctx.arc(x - size * 0.1, y - size * 0.15, size * 0.06, 0, Math.PI * 2);
                 this.ctx.arc(x + size * 0.1, y - size * 0.15, size * 0.06, 0, Math.PI * 2);
                 this.ctx.fill();
-
 
                 // Crossbones
                 this.ctx.save();
@@ -1294,11 +1420,8 @@
                 this.ctx.strokeRect(-size * 0.3, -size * 0.05, size * 0.6, size * 0.1);
                 this.ctx.restore();
 
-
                 this.ctx.restore();
             }
-
-
 
 
             // -----------------------------------
@@ -1311,6 +1434,28 @@
                 }
             }
 
+            processStatusEffects(team) {
+                team.forEach(hero => {
+                    if (hero.hp > 0 && hero.statusEffects.length > 0) {
+                        hero.statusEffects.forEach(effect => {
+                            if (effect.type === 'bleed') {
+                                hero.hp -= effect.damage;
+                                this.log([
+                                    { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
+                                    { text: ` takes ${effect.damage} damage from `, color: COLORS.text },
+                                    { text: 'Bleed!', color: COLORS.damage }
+                                ]);
+                                this.state.abilityAnimations.push({ type: 'bleed', hero: hero, progress: 0, speed: 0.04 });
+                                this.checkHeroKO(hero);
+                            }
+                            if (effect.duration) {
+                                effect.duration--;
+                            }
+                        });
+                        hero.statusEffects = hero.statusEffects.filter(e => !e.hasOwnProperty('duration') || e.duration > 0);
+                    }
+                });
+            }
 
             startNewRound() {
                 this.state.round++;
@@ -1321,6 +1466,9 @@
                 this.state.isClashing = false;
                 this.state.bossActiveAbility = null;
 
+                this.processStatusEffects(this.state.player1Team);
+                this.processStatusEffects(this.state.player2Team);
+                if (this.checkGameOver()) return;
 
                 const p1Theron = this.state.player1Team.find(h => h.abilityId === 'fireball' && h.hp > 0);
                 if (p1Theron && this.state.round === 5) this.handleFireball(p1Theron, this.state.player2Team, 'player2');
@@ -1328,10 +1476,8 @@
                 const p2Theron = this.state.player2Team.find(h => h.abilityId === 'fireball' && h.hp > 0);
                 if (p2Theron && this.state.round === 5) this.handleFireball(p2Theron, this.state.player1Team, 'player1');
 
-
                 const p1Kaelen = this.state.player1Team.find(h => h.abilityId === 'longBow' && h.hp > 0);
                 if (p1Kaelen && this.state.round % 2 === 0) this.handleLongBow(p1Kaelen, this.state.player2Team);
-
 
                 const p2Kaelen = this.state.player2Team.find(h => h.abilityId === 'longBow' && h.hp > 0);
                 if (p2Kaelen && this.state.round % 2 === 0) this.handleLongBow(p2Kaelen, this.state.player1Team);
@@ -1339,11 +1485,9 @@
                 if (!this.state.winner) this.log([{ text: 'Select a hero to clash.', color: COLORS.info }]);
             }
 
-
             handleFireball(caster, targetTeam, targetTeamKey) {
                 let livingTargets = targetTeam.filter(h => h.hp > 0);
                 if (livingTargets.length === 0) return;
-
 
                 this.log([
                     { text: caster.name, color: COLORS[caster.type.toLowerCase()] },
@@ -1353,44 +1497,79 @@
                 this.state.fireballAnimation = { progress: 0, targetTeamKey };
                 
                 const taunter = livingTargets.find(h => h.abilityId === 'tank' && h.hp > 0);
-                livingTargets.forEach(target => {
-                    let damage = 5;
-                    let finalTarget = taunter || target;
-                    if(caster.type === 'Magic' && finalTarget.type === 'Might') damage *= 2;
-                    if (finalTarget.abilityId === 'smokeBomb' && !finalTarget.smokeBombUsed) {
+
+                if (taunter) {
+                    let totalDamage = 0;
+                    livingTargets.forEach(target => {
+                        let damage = 5;
+                        if (caster.type === 'Magic' && taunter.type === 'Might') {
+                            damage *= 2;
+                        }
+                        totalDamage += damage;
+                    });
+
+                    if (taunter.abilityId === 'smokeBomb' && !taunter.smokeBombUsed) {
                         this.log([
-                            { text: finalTarget.name, color: COLORS[finalTarget.type.toLowerCase()] },
+                            { text: taunter.name, color: COLORS[taunter.type.toLowerCase()] },
                             { text: "'s ", color: COLORS.text },
                             { text: 'Smoke Bomb', color: COLORS.ability },
-                            { text: ' evades the fireball!', color: COLORS.text }
+                            { text: ' evades the entire fireball!', color: COLORS.text }
                         ]);
-                        finalTarget.smokeBombUsed = true;
+                        taunter.smokeBombUsed = true;
                     } else {
-                        finalTarget.hp -= damage;
+                        taunter.hp -= totalDamage;
                         this.log([
-                            { text: 'Fireball hits ', color: COLORS.ability },
-                            { text: finalTarget.name, color: COLORS[finalTarget.type.toLowerCase()] },
-                            { text: ` for ${damage} damage.`, color: COLORS.damage }
+                            { text: taunter.name, color: COLORS[taunter.type.toLowerCase()] },
+                            { text: ' absorbs the fireball for the team, taking ', color: COLORS.info },
+                            { text: `${totalDamage} total damage!`, color: COLORS.damage }
                         ]);
-                        this.checkHeroKO(finalTarget);
+                        this.checkHeroKO(taunter);
+                        if (taunter.hp > 0 && taunter.abilityId === 'riposte') {
+                            this.handleRiposte(taunter, caster);
+                        }
                     }
-                });
+                } else {
+                    livingTargets.forEach(target => {
+                        let damage = 5;
+                        if(caster.type === 'Magic' && target.type === 'Might') {
+                            damage *= 2;
+                        }
+                        
+                        if (target.abilityId === 'smokeBomb' && !target.smokeBombUsed) {
+                            this.log([
+                                { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                                { text: "'s ", color: COLORS.text },
+                                { text: 'Smoke Bomb', color: COLORS.ability },
+                                { text: ' evades the fireball!', color: COLORS.text }
+                            ]);
+                            target.smokeBombUsed = true;
+                        } else {
+                            target.hp -= damage;
+                            this.log([
+                                { text: 'Fireball hits ', color: COLORS.ability },
+                                { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                                { text: ` for ${damage} damage.`, color: COLORS.damage }
+                            ]);
+                            this.checkHeroKO(target);
+                            if (target.hp > 0 && target.abilityId === 'riposte') {
+                                this.handleRiposte(target, caster);
+                            }
+                        }
+                    });
+                }
                 this.checkGameOver();
             }
-
 
             handleLongBow(kaelen, targetTeam) {
                 let livingTargets = targetTeam.filter(h => h.hp > 0);
                 if (livingTargets.length === 0) return;
 
-
                 let randomTarget = livingTargets[Math.floor(Math.random() * livingTargets.length)];
                 const taunter = targetTeam.find(h => h.abilityId === 'tank' && h.hp > 0);
                 let finalTarget = taunter || randomTarget;
                 
-                const kaelenBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === kaelen.id);
-                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === finalTarget.id);
-
+                const kaelenBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === kaelen.uuid);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === finalTarget.uuid);
 
                 if (kaelenBox && targetBox) {
                     this.state.abilityAnimations.push({
@@ -1418,17 +1597,18 @@
                         { text: ` for ${damage} damage.`, color: COLORS.damage }
                     ]);
                     this.checkHeroKO(finalTarget);
+                    if (finalTarget.hp > 0 && finalTarget.abilityId === 'riposte') {
+                        this.handleRiposte(finalTarget, kaelen);
+                    }
                 }
                 this.checkGameOver();
             }
 
-
             initiateClashAnimation() {
                 if (!this.state.pendingClash) return;
                 const { p1, p2 } = this.state.pendingClash;
-                const p1StartPos = this.cardHitboxes.player1.find(box => box.hero.id === p1.id);
-                const p2StartPos = this.cardHitboxes.player2.find(box => box.hero.id === p2.id);
-
+                const p1StartPos = this.cardHitboxes.player1.find(box => box.hero.uuid === p1.uuid);
+                const p2StartPos = this.cardHitboxes.player2.find(box => box.hero.uuid === p2.uuid);
 
                 if (p1StartPos && p2StartPos) {
                     this.state.animation = {
@@ -1447,12 +1627,10 @@
                 }
             }
 
-
             resolveClash() {
                 if (!this.state.player1Selection || this.state.isClashing) return;
-                const p1 = this.state.player1Selection;
+                let p1 = this.state.player1Selection;
                 let p2;
-
 
                 if (this.state.gamePhase === 'bossBattle') {
                     p2 = this.state.player2Team[0];
@@ -1484,7 +1662,26 @@
                 }
                 
                 this.state.isClashing = true;
+
+                // --- PRE-CLASH ABILITIES ---
+                let madScrambleTriggered = false;
+                if (p1.abilityId === 'madScramble' && p1.hp > 0) {
+                    this.handleMadScramble(p1, p2);
+                    madScrambleTriggered = true;
+                }
+                if (!madScrambleTriggered && p2.abilityId === 'madScramble' && p2.hp > 0) {
+                    this.handleMadScramble(p2, p1);
+                }
+
+                if (p1.abilityId === 'galeForce' && p1.hp > 0) {
+                    p2 = this.handleGaleForce(p1, p2);
+                }
+                if (p2.abilityId === 'galeForce' && p2.hp > 0) {
+                    p1 = this.handleGaleForce(p2, p1);
+                }
+                this.state.player1Selection = p1;
                 this.state.player2Selection = p2;
+
                 this.log([
                     { text: p1.name, color: COLORS[p1.type.toLowerCase()] },
                     { text: ' clashes with ', color: COLORS.text },
@@ -1492,27 +1689,27 @@
                     { text: '!', color: COLORS.text }
                 ]);
 
-
-                if (this.state.gamePhase === 'bossBattle') {
-                    if (this.state.bossActiveAbility === 'cleave') {
-                        this.state.abilityAnimations.push({ type: 'cleave', progress: 0, speed: 0.03 });
-                        this.state.player1Team.forEach(hero => {
-                            if (hero.hp > 0) {
-                                hero.hp -= 4;
-                                this.log([
-                                    { text: 'Cleave hits ', color: COLORS.ability },
-                                    { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
-                                    { text: ' for 4 damage!', color: COLORS.damage }
-                                ]);
-                                this.checkHeroKO(hero);
+                if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'cleave') {
+                    this.state.abilityAnimations.push({ type: 'cleave', progress: 0, speed: 0.03 });
+                    this.state.player1Team.forEach(hero => {
+                        if (hero.hp > 0) {
+                            hero.hp -= 4;
+                            this.log([
+                                { text: 'Cleave hits ', color: COLORS.ability },
+                                { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
+                                { text: ' for 4 damage!', color: COLORS.damage }
+                            ]);
+                            this.checkHeroKO(hero);
+                            if (hero.hp > 0 && hero.abilityId === 'riposte') {
+                                this.handleRiposte(hero, p2);
                             }
-                        });
-                    } else if (this.state.bossActiveAbility === 'intimidation') {
-                        this.state.abilityAnimations.push({ type: 'intimidation', progress: 0, speed: 0.03 });
-                    }
+                        }
+                    });
+                } else if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'intimidation') {
+                    this.state.abilityAnimations.push({ type: 'intimidation', progress: 0, speed: 0.03 });
                 } else {
                     this.state.player1Team.forEach(hero => {
-                        if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.id !== p1.id) {
+                        if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.uuid !== p1.uuid) {
                             p2.hp -= 2;
                             this.log([
                                 { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
@@ -1527,7 +1724,7 @@
                         }
                     });
                     this.state.player2Team.forEach(hero => {
-                        if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.id !== p2.id) {
+                        if (hero.hp > 0 && hero.abilityId === 'ambush' && hero.uuid !== p2.uuid) {
                             p1.hp -= 2;
                              this.log([
                                 { text: hero.name, color: COLORS[hero.type.toLowerCase()] },
@@ -1547,7 +1744,6 @@
                 this.state.pendingClash = { p1, p2 };
             }
 
-
             simulateClash(p1, p2) {
                 let p1Damage = this.getHeroCurrentAP(p1, this.state.player1Team);
                 let p2Damage = this.getHeroCurrentAP(p2, this.state.player2Team);
@@ -1558,15 +1754,13 @@
                 return [p1Damage, p2Damage];
             }
 
-
             triggerImpact() {
                 this.state.impactAnimation = { x: this.canvas.width / 2, y: this.canvas.height / 2, progress: 0, radius: 240 * this.scale };
             }
 
-
             triggerOverloadAnimation(caster, target) {
-                const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === caster.id);
-                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.id === target.id);
+                const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === caster.uuid);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === target.uuid);
                 if (casterBox && targetBox) {
                     this.state.overloadAnimation = {
                         progress: 0,
@@ -1577,44 +1771,49 @@
             }
             
             getHeroCurrentAP(hero, team) {
+                if (hero.abilityId === 'chaosBolt') {
+                    return Math.floor(Math.random() * 13) + 6; // 6-18 damage
+                }
                 let currentAP = hero.ap;
                 if (hero.abilityId === 'mobRule') {
-                    currentAP += team.filter(h => h.id !== hero.id && h.name.includes('Goblin') && h.hp > 0).length;
+                    currentAP += team.filter(h => h.uuid !== hero.uuid && h.name.includes('Goblin') && h.hp > 0).length;
                 }
                 return currentAP;
             }
-
 
             calculateClashResult(p1, p2) {
                 let p1Damage = this.getHeroCurrentAP(p1, this.state.player1Team);
                 let p2Damage = this.getHeroCurrentAP(p2, this.state.player2Team);
                 if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'ram') p2Damage += 5;
 
-
                 const p1HasAdvantage = (p1.type === 'Might' && p2.type === 'Finesse') || (p1.type === 'Finesse' && p2.type === 'Magic') || (p1.type === 'Magic' && p2.type === 'Might');
                 const p2HasAdvantage = (p2.type === 'Might' && p1.type === 'Finesse') || (p2.type === 'Finesse' && p1.type === 'Magic') || (p2.type === 'Magic' && p1.type === 'Might');
 
-
                 if (p1HasAdvantage) {
-                    p1Damage *= 2; p2Damage = Math.ceil(p2Damage / 2);
+                    p1Damage *= 2;
+                    if (p2.abilityId !== 'chaosBolt') {
+                        p2Damage = Math.ceil(p2Damage / 2);
+                    }
                     this.log([{ text: p1.name, color: COLORS[p1.type.toLowerCase()] }, { text: ' has the advantage!', color: COLORS.accent }]);
-                    const p1Hitbox = this.cardHitboxes.player1.find(h => h.hero.id === p1.id);
+                    const p1Hitbox = this.cardHitboxes.player1.find(h => h.hero.uuid === p1.uuid);
                     if(p1Hitbox) this.state.abilityAnimations.push({ type: 'advantage', hitbox: p1Hitbox, color: COLORS.accent, progress: 0, speed: 0.05 });
                 } else if (p2HasAdvantage) {
-                    p2Damage *= 2; p1Damage = Math.ceil(p1Damage / 2);
+                    p2Damage *= 2;
+                    if (p1.abilityId !== 'chaosBolt') {
+                        p1Damage = Math.ceil(p1Damage / 2);
+                    }
                     this.log([{ text: p2.name, color: COLORS[p2.type.toLowerCase()] }, { text: ' has the advantage!', color: COLORS.accent }]);
-                    const p2Hitbox = this.cardHitboxes.player2.find(h => h.hero.id === p2.id);
+                    const p2Hitbox = this.cardHitboxes.player2.find(h => h.hero.uuid === p2.uuid);
                     if(p2Hitbox) this.state.abilityAnimations.push({ type: 'advantage', hitbox: p2Hitbox, color: COLORS.accent, progress: 0, speed: 0.05 });
                 }
                 
                 let p1Target = p1, p2Target = p2;
                 if (this.state.gamePhase !== 'bossBattle') {
                     const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p1Taunter && p1Taunter.id !== p1.id) { p1Target = p1Taunter; this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
+                    if (p1Taunter && p1Taunter.uuid !== p1.uuid) { p1Target = p1Taunter; this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
                     const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p2Taunter && p2Taunter.id !== p2.id) { p2Target = p2Taunter; this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
+                    if (p2Taunter && p2Taunter.uuid !== p2.uuid) { p2Target = p2Taunter; this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
                 }
-
 
                 let finalP1Damage = p1Damage, finalP2Damage = p2Damage;
                 if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'intimidation') finalP1Damage = 0;
@@ -1624,7 +1823,6 @@
                 if (p2Target.abilityId === 'smokeBomb' && !p2Target.smokeBombUsed) { finalP1Damage = 0; p2Target.smokeBombUsed = true; this.log([{ text: p2Target.name, color: COLORS.finesse }, { text: "'s Smoke Bomb evades!", color: COLORS.ability }]); this.state.abilityAnimations.push({ type: 'smokeBomb', hero: p2Target, progress: 0, speed: 0.04 }); }
                 if (p1.abilityId !== 'crush' && p2Target.abilityId === 'sturdy') finalP1Damage = Math.max(0, finalP1Damage - 1);
                 if (p2.abilityId !== 'crush' && p1Target.abilityId === 'sturdy') finalP2Damage = Math.max(0, finalP2Damage - 1);
-
 
                 if (p1Target.hp <= 0) {
                     finalP1Damage = 0;
@@ -1637,10 +1835,16 @@
                 if (p1.hp <= 0) finalP1Damage = 0;
                 if (p2.hp <= 0) finalP2Damage = 0;
 
-
                 if(finalP2Damage > 0) { p1Target.hp -= finalP2Damage; this.log([{ text: p2.name, color: COLORS[p2.type.toLowerCase()] }, { text: ` deals ${finalP2Damage} damage to `, color: COLORS.text }, { text: p1Target.name, color: COLORS[p1Target.type.toLowerCase()] }]); this.checkHeroKO(p1Target); }
                 if(finalP1Damage > 0) { p2Target.hp -= finalP1Damage; this.log([{ text: p1.name, color: COLORS[p1.type.toLowerCase()] }, { text: ` deals ${finalP1Damage} damage to `, color: COLORS.text }, { text: p2Target.name, color: COLORS[p2Target.type.toLowerCase()] }]); this.checkHeroKO(p2Target); }
                 
+                // Post-clash abilities
+                if (p1.abilityId === 'bleed' && finalP1Damage > 0 && p2Target.hp > 0) { this.applyBleed(p1, p2Target); }
+                if (p2.abilityId === 'bleed' && finalP2Damage > 0 && p1Target.hp > 0) { this.applyBleed(p2, p1Target); }
+                
+                if (p1.abilityId === 'boonOfBedlam') { this.handleBoonOfBedlam(p1); }
+                if (p2.abilityId === 'boonOfBedlam') { this.handleBoonOfBedlam(p2); }
+
                 if (p1.abilityId === 'unstableConcoction' && p1HasAdvantage && p1.hp > 0) {
                     this.log([{ text: p1.name, color: COLORS.magic }, { text: "'s concoction explodes!", color: COLORS.ability }]);
                     this.state.player2Team.forEach(e => { if (e.hp > 0) { e.hp -= 3; this.log([{ text: `Explosion hits ${e.name} for 3 damage.`, color: COLORS.damage }]); this.checkHeroKO(e); } });
@@ -1662,11 +1866,10 @@
                 this.checkGameOver();
             }
 
-
             handleOverload(caster, originalTarget) {
                 let potentialTargets = [
-                    ...this.state.player1Team.filter(h => h.hp > 0 && h.id !== caster.id && h.id !== originalTarget.id),
-                    ...this.state.player2Team.filter(h => h.hp > 0 && h.id !== caster.id && h.id !== originalTarget.id)
+                    ...this.state.player1Team.filter(h => h.hp > 0 && h.uuid !== caster.uuid && h.uuid !== originalTarget.uuid),
+                    ...this.state.player2Team.filter(h => h.hp > 0 && h.uuid !== caster.uuid && h.uuid !== originalTarget.uuid)
                 ];
                 if (potentialTargets.length > 0) {
                     const overloadTarget = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
@@ -1684,6 +1887,181 @@
                 }
             }
 
+            handleRiposte(caster, target) {
+                const damage = 2;
+                target.hp -= damage;
+                this.log([
+                    { text: caster.name, color: COLORS[caster.type.toLowerCase()] },
+                    { text: "'s ", color: COLORS.text },
+                    { text: 'Riposte', color: COLORS.ability },
+                    { text: ' hits ', color: COLORS.text },
+                    { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                    { text: ` for ${damage} damage!`, color: COLORS.damage }
+                ]);
+                const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === caster.uuid);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === target.uuid);
+                if (casterBox && targetBox) {
+                    this.state.abilityAnimations.push({
+                        type: 'riposte', progress: 0, speed: 0.06,
+                        startX: casterBox.x + casterBox.width / 2, startY: casterBox.y + casterBox.height / 2,
+                        endX: targetBox.x + targetBox.width / 2, endY: targetBox.y + targetBox.height / 2,
+                    });
+                }
+                this.checkHeroKO(target);
+            }
+
+            handleMadScramble(clashingHero, opposingHero) {
+                const p1Bench = this.state.player1Team.filter(h => h.hp > 0 && h.uuid !== clashingHero.uuid && h.uuid !== opposingHero.uuid);
+                const p2Bench = this.state.player2Team.filter(h => h.hp > 0 && h.uuid !== clashingHero.uuid && h.uuid !== opposingHero.uuid);
+
+                if (p1Bench.length > 0 && p2Bench.length > 0) {
+                    const hero1 = p1Bench[Math.floor(Math.random() * p1Bench.length)];
+                    const hero2 = p2Bench[Math.floor(Math.random() * p2Bench.length)];
+
+                    const box1 = this.cardHitboxes.player1.find(b => b.hero.uuid === hero1.uuid);
+                    const box2 = this.cardHitboxes.player2.find(b => b.hero.uuid === hero2.uuid);
+                    const index1 = this.state.player1Team.findIndex(h => h.uuid === hero1.uuid);
+                    const index2 = this.state.player2Team.findIndex(h => h.uuid === hero2.uuid);
+
+                    if (!box1 || !box2 || index1 === -1 || index2 === -1) {
+                        return; // Safety check
+                    }
+                    
+                    this.state.player1Team[index1] = hero2;
+                    this.state.player2Team[index2] = hero1;
+                    
+                    hero1.teamKey = 'player2';
+                    hero2.teamKey = 'player1';
+
+                    this.log([
+                        { text: clashingHero.name, color: COLORS.magic },
+                        { text: "'s ", color: COLORS.text },
+                        { text: 'Mad Scramble', color: COLORS.ability },
+                        { text: ' swaps ', color: COLORS.text },
+                        { text: hero1.name, color: COLORS[hero2.type.toLowerCase()] }, // Use new team color
+                        { text: ' and ', color: COLORS.text },
+                        { text: hero2.name, color: COLORS[hero1.type.toLowerCase()] }, // Use new team color
+                        { text: '!', color: COLORS.text }
+                    ]);
+                    
+                    this.state.abilityAnimations.push({ 
+                        type: 'cardSwap', 
+                        hero1: hero1, 
+                        hero2: hero2, 
+                        startPos1: { x: box1.x, y: box1.y }, 
+                        startPos2: { x: box2.x, y: box2.y }, 
+                        progress: 0, 
+                        speed: 0.03 
+                    });
+
+                } else {
+                     this.log([
+                        { text: clashingHero.name, color: COLORS.magic },
+                        { text: "'s ", color: COLORS.text },
+                        { text: 'Mad Scramble', color: COLORS.ability },
+                        { text: ' fizzles! Not enough heroes to swap.', color: COLORS.info }
+                    ]);
+                }
+            }
+
+            handleBoonOfBedlam(caster) {
+                const livingHeroes = [...this.state.player1Team.filter(h => h.hp > 0), ...this.state.player2Team.filter(h => h.hp > 0)];
+                const otherHeroes = livingHeroes.filter(h => h.uuid !== caster.uuid);
+                if (otherHeroes.length === 0) return;
+
+                const target = otherHeroes[Math.floor(Math.random() * otherHeroes.length)];
+                const isHeal = Math.random() < 0.5;
+                
+                const casterBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === caster.uuid);
+                const targetBox = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(box => box.hero.uuid === target.uuid);
+
+                if (isHeal) {
+                    target.hp += 5;
+                    this.log([
+                        { text: caster.name, color: COLORS.magic },
+                        { text: "'s ", color: COLORS.text },
+                        { text: 'Boon of Bedlam', color: COLORS.ability },
+                        { text: ' heals ', color: COLORS.text },
+                        { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                        { text: ' for 5 HP!', color: '#4CAF50' }
+                    ]);
+                } else {
+                    target.hp -= 5;
+                    this.log([
+                        { text: caster.name, color: COLORS.magic },
+                        { text: "'s ", color: COLORS.text },
+                        { text: 'Boon of Bedlam', color: COLORS.ability },
+                        { text: ' zaps ', color: COLORS.text },
+                        { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                        { text: ' for 5 damage!', color: COLORS.damage }
+                    ]);
+                    this.checkHeroKO(target);
+                }
+
+                if (casterBox && targetBox) {
+                    this.state.abilityAnimations.push({
+                        type: 'boonOfBedlam', progress: 0, speed: 0.05, isHeal,
+                        startX: casterBox.x + casterBox.width / 2, startY: casterBox.y + casterBox.height / 2,
+                        endX: targetBox.x + targetBox.width / 2, endY: targetBox.y + targetBox.height / 2
+                    });
+                }
+            }
+            
+            handleGaleForce(caster, originalTarget) {
+                const targetTeam = this.state.player1Team.some(h => h.uuid === originalTarget.uuid) ? this.state.player1Team : this.state.player2Team;
+                const livingBench = targetTeam.filter(h => h.hp > 0 && h.uuid !== originalTarget.uuid);
+
+                if (livingBench.length > 0) {
+                    const swapCandidate = livingBench[Math.floor(Math.random() * livingBench.length)];
+                    const targetIndex = targetTeam.findIndex(h => h.uuid === originalTarget.uuid);
+                    const swapIndex = targetTeam.findIndex(h => h.uuid === swapCandidate.uuid);
+
+                    if (targetIndex !== -1 && swapIndex !== -1) {
+                        [targetTeam[targetIndex], targetTeam[swapIndex]] = [targetTeam[swapIndex], targetTeam[targetIndex]];
+
+                        this.log([
+                            { text: caster.name, color: COLORS[caster.type.toLowerCase()] },
+                            { text: "'s ", color: COLORS.text },
+                            { text: 'Gale Force', color: COLORS.ability },
+                            { text: ' pulls in ', color: COLORS.text },
+                            { text: swapCandidate.name, color: COLORS[swapCandidate.type.toLowerCase()] },
+                            { text: ' from the bench!', color: COLORS.text }
+                        ]);
+                        
+                        const box1 = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(b => b.hero.uuid === originalTarget.uuid);
+                        const box2 = [...this.cardHitboxes.player1, ...this.cardHitboxes.player2].find(b => b.hero.uuid === swapCandidate.uuid);
+                        if (box1 && box2) {
+                            this.state.abilityAnimations.push({ type: 'galeForce', progress: 0, speed: 0.05, box1, box2 });
+                        }
+                        return swapCandidate;
+                    }
+                } else {
+                    this.log([
+                        { text: caster.name, color: COLORS[caster.type.toLowerCase()] },
+                        { text: "'s ", color: COLORS.text },
+                        { text: 'Gale Force', color: COLORS.ability },
+                        { text: ' finds no one to swap with!', color: COLORS.info }
+                    ]);
+                }
+                return originalTarget;
+            }
+
+            applyBleed(caster, target) {
+                this.log([
+                    { text: target.name, color: COLORS[target.type.toLowerCase()] },
+                    { text: ' is now ', color: COLORS.text },
+                    { text: 'Bleeding!', color: COLORS.damage }
+                ]);
+                let existingBleed = target.statusEffects.find(e => e.type === 'bleed');
+                if (existingBleed) {
+                    if (existingBleed.damage < 3) {
+                        existingBleed.damage++;
+                        this.log([{ text: 'Bleed has intensified!', color: COLORS.damage }]);
+                    }
+                } else {
+                    target.statusEffects.push({ type: 'bleed', damage: 1 });
+                }
+            }
 
             checkHeroKO(hero) {
                 if (hero.hp <= 0 && !hero.deathAnimation) {
@@ -1699,7 +2077,6 @@
                     }
                 }
             }
-
 
             initConfetti() {
                 this.state.confettiParticles = [];
@@ -1717,12 +2094,16 @@
                 }
             }
 
-
             checkGameOver() {
+                // BUG FIX: Prevent multiple game over screens by checking if a winner is already set
+                if (this.state.winner) return true;
+
                 const p1HasHeroes = this.state.player1Team.some(h => h.hp > 0);
                 const p2HasHeroes = this.state.player2Team.some(h => h.hp > 0);
+                
                 if (!p1HasHeroes) this.state.winner = 'p2';
                 else if (!p2HasHeroes) this.state.winner = 'p1';
+
                 if (this.state.winner) {
                     setTimeout(() => {
                         if (this.state.winner === 'p1' && this.state.difficulty === 'expert') {
@@ -1738,7 +2119,6 @@
                 }
                 return false;
             }
-
 
             // -----------------------------------
             //  Event Handling
@@ -1757,11 +2137,11 @@
                     case 'heroSelection': this.handleHeroSelectionClick(mouseX, mouseY); break;
                     case 'practiceSelection': this.handlePracticeSelectionClick(mouseX, mouseY); break;
                     case 'heroViewer': this.handleHeroViewerClick(mouseX, mouseY); break;
+                    case 'howToPlay': this.handleHowToPlayClick(mouseX, mouseY); break;
                     case 'playing': case 'bossBattle': this.handlePlayingClick(mouseX, mouseY); break;
                     case 'gameOver': case 'expertVictory': this.handleGameOverClick(mouseX, mouseY); break;
                 }
             }
-
 
             handleMouseMove(event) {
                 const rect = this.canvas.getBoundingClientRect();
@@ -1789,15 +2169,14 @@
                 this.state.hoveredHero = foundHero;
             }
 
-
             handleMainMenuClick(mouseX, mouseY) {
                 if (this.buttonHitboxes['3v3clash']?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['3v3clash'])) { this.state.teamSize = 3; this.state.gamePhase = 'difficultySelection'; }
                 if (this.buttonHitboxes['5v5clash']?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['5v5clash'])) { this.state.teamSize = 5; this.state.gamePhase = 'difficultySelection'; }
                 if (this.buttonHitboxes.bossbattle?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.bossbattle)) { this.state.difficulty = 'boss'; this.state.teamSize = 5; this.state.gamePhase = 'heroSelection'; }
                 if (this.buttonHitboxes.practice?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.practice)) { this.state.teamSize = 3; this.state.gamePhase = 'practiceSelection'; }
                 if (this.buttonHitboxes.heroviewer?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.heroviewer)) { this.state.gamePhase = 'heroViewer'; }
+                if (this.buttonHitboxes.howtoplay?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.howtoplay)) { this.state.gamePhase = 'howToPlay'; }
             }
-
 
             handleDifficultySelectionClick(mouseX, mouseY) {
                 for (const level of ['easy', 'normal', 'expert']) {
@@ -1810,14 +2189,26 @@
                 }
             }
 
-
             handleHeroSelectionClick(mouseX, mouseY) {
                 for (const hitbox of this.cardHitboxes.selection) {
                     if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
                         const hero = hitbox.hero;
-                        const index = this.state.player1Team.findIndex(h => h.id === hero.id);
-                        if (index > -1) this.state.player1Team.splice(index, 1);
-                        else if (this.state.player1Team.length < this.state.teamSize) this.state.player1Team.push(JSON.parse(JSON.stringify(hero)));
+                        const team = this.state.player1Team;
+                        let lastIndex = -1;
+                        for (let i = team.length - 1; i >= 0; i--) {
+                            if (team[i].id === hero.id) {
+                                lastIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (lastIndex > -1) {
+                            team.splice(lastIndex, 1);
+                        } else if (team.length < this.state.teamSize) {
+                            const newHero = JSON.parse(JSON.stringify(hero));
+                            newHero.uuid = this.state.nextUUID++;
+                            team.push(newHero);
+                        }
                         return;
                     }
                 }
@@ -1828,15 +2219,26 @@
                 }
             }
 
-
             handlePracticeSelectionClick(mouseX, mouseY) {
                 for (const hitbox of this.cardHitboxes.selection) {
                     if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
                         const hero = hitbox.hero;
                         const team = this.state.practiceSelectionState === 'player' ? this.state.player1Team : this.state.player2Team;
-                        const index = team.findIndex(h => h.id === hero.id);
-                        if (index > -1) team.splice(index, 1);
-                        else if (team.length < this.state.teamSize) team.push(JSON.parse(JSON.stringify(hero)));
+                        let lastIndex = -1;
+                        for (let i = team.length - 1; i >= 0; i--) {
+                            if (team[i].id === hero.id) {
+                                lastIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (lastIndex > -1) {
+                            team.splice(lastIndex, 1);
+                        } else if (team.length < this.state.teamSize) {
+                            const newHero = JSON.parse(JSON.stringify(hero));
+                            newHero.uuid = this.state.nextUUID++;
+                            team.push(newHero);
+                        }
                         return;
                     }
                 }
@@ -1847,13 +2249,18 @@
                 }
             }
 
-
             handleHeroViewerClick(mouseX, mouseY) {
                 if (this.buttonHitboxes.previous?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.previous)) { this.state.heroViewerIndex = (this.state.heroViewerIndex - 1 + HEROES.length) % HEROES.length; }
                 if (this.buttonHitboxes.next?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.next)) { this.state.heroViewerIndex = (this.state.heroViewerIndex + 1) % HEROES.length; }
                 if (this.buttonHitboxes.back?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.back)) { this.state.gamePhase = 'mainMenu'; }
             }
 
+            handleHowToPlayClick(mouseX, mouseY) {
+                const backBtn = this.buttonHitboxes.back;
+                if (backBtn && this.isClickInHitbox(mouseX, mouseY, backBtn)) {
+                    this.state.gamePhase = 'mainMenu';
+                }
+            }
 
             handlePlayingClick(mouseX, mouseY) {
                 if (this.state.isClashing) return;
@@ -1868,12 +2275,10 @@
                 }
             }
 
-
             handleGameOverClick(mouseX, mouseY) {
                 const btn = this.buttonHitboxes.playAgain;
                 if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) this.resetGame();
             }
-
 
             isClickInHitbox(mouseX, mouseY, hitbox) {
                 return mouseX >= hitbox.x && mouseX <= hitbox.x + hitbox.width &&
@@ -1887,7 +2292,6 @@
             }
         }
 
-
         // ===================================
         //  ▶️ 3. INITIALIZE
         // ===================================
@@ -1897,3 +2301,4 @@
     </script>
 </body>
 </html>
+
