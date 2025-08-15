@@ -199,10 +199,11 @@
                         if (this.state.difficulty === 'expert') {
                             const team = [];
                             const pickedIds = new Set();
+                            const getPowerScore = (hero) => hero.hp + hero.ap;
 
                             // --- Synergy Check: Goblins ---
                             const availableGoblins = remainingHeroes.filter(h => h.name.includes('Goblin'));
-                            if (availableGoblins.length >= 2 && Math.random() < 0.6) { // 60% chance to go for Goblin synergy
+                            if (availableGoblins.length >= 2 && Math.random() < 0.6) {
                                 availableGoblins.forEach(goblin => {
                                     if (team.length < this.state.teamSize) {
                                         team.push(goblin);
@@ -211,46 +212,51 @@
                                 });
                             }
 
-                            // --- Counter-Picking Logic ---
-                            const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
-                            this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
-                            const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
-                            const typePriority = Object.keys(playerTypes)
-                                .sort((a, b) => playerTypes[b] - playerTypes[a])
-                                .map(type => counterType[type]);
+                            // --- Main Picking Logic ---
+                            if (team.length < this.state.teamSize) { // Only run if synergy didn't fill the team
+                                const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
+                                this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
+                                const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
+                                const typePriority = Object.keys(playerTypes)
+                                    .sort((a, b) => playerTypes[b] - playerTypes[a])
+                                    .map(type => counterType[type]);
 
-                            const getPowerScore = (hero) => hero.hp + hero.ap;
+                                const pickStrongestFromType = (type, excludeIds) => {
+                                    const available = remainingHeroes.filter(h => h.type === type && !excludeIds.has(h.id));
+                                    if (available.length === 0) return null;
+                                    available.sort((a, b) => getPowerScore(b) - getPowerScore(a));
+                                    return available[0];
+                                };
 
-                            while (team.length < this.state.teamSize) {
-                                let pickedHero = null;
-                                let bestCounter = null;
-
-                                // Find the best hero based on counter-type priority
-                                for (const type of typePriority) {
-                                    const availableCounterHeroes = remainingHeroes.filter(h => h.type === type && !pickedIds.has(h.id));
-                                    if (availableCounterHeroes.length > 0) {
-                                        availableCounterHeroes.sort((a, b) => getPowerScore(b) - getPowerScore(a));
-                                        bestCounter = availableCounterHeroes[0];
-                                        break; // Found the best hero in the highest priority counter type
+                                // 1. Pick 1 or 2 initial counters
+                                const numCounters = this.state.teamSize === 5 ? 2 : 1;
+                                for (let i = 0; i < numCounters; i++) {
+                                    if (team.length < this.state.teamSize) {
+                                        let counterPick = null;
+                                        // Find the best available counter based on type priority
+                                        for (const type of typePriority) {
+                                            counterPick = pickStrongestFromType(type, pickedIds);
+                                            if (counterPick) break;
+                                        }
+                                        if (counterPick) {
+                                            team.push(counterPick);
+                                            pickedIds.add(counterPick.id);
+                                        }
                                     }
                                 }
 
-                                pickedHero = bestCounter;
+                                // 2. Fill remaining slots with the best overall heroes
+                                while (team.length < this.state.teamSize) {
+                                    const remainingPool = remainingHeroes.filter(h => !pickedIds.has(h.id));
+                                    if (remainingPool.length === 0) break;
 
-                                // If no counter was found, pick the strongest remaining hero overall
-                                if (!pickedHero) {
-                                    const trulyRemaining = remainingHeroes.filter(h => !pickedIds.has(h.id));
-                                    if (trulyRemaining.length > 0) {
-                                        trulyRemaining.sort((a, b) => getPowerScore(b) - getPowerScore(a));
-                                        pickedHero = trulyRemaining[0];
+                                    remainingPool.sort((a, b) => getPowerScore(b) - getPowerScore(a));
+                                    const bestOverall = remainingPool[0];
+
+                                    if (bestOverall) {
+                                        team.push(bestOverall);
+                                        pickedIds.add(bestOverall.id);
                                     }
-                                }
-
-                                if (pickedHero) {
-                                    team.push(pickedHero);
-                                    pickedIds.add(pickedHero.id);
-                                } else {
-                                    break; // No more heroes to pick
                                 }
                             }
                             this.state.player2Team = team;
