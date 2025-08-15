@@ -61,34 +61,82 @@
 
         const HEROES = [
             // Might Heroes
-            { id: 0, name: 'Sir Reginald', type: 'Might', hp: 10, ap: 4, abilityId: 'lastStand', description: 'Last Stand: If knocked out, survives with 1 HP (once per game).' },
-            { id: 1, name: 'Grak the Crusher', type: 'Might', hp: 8, ap: 6, abilityId: 'crush', description: 'Crush: His attacks ignore all damage reduction effects.' },
-            { id: 6, name: 'Boro the Bulwark', type: 'Might', hp: 10, ap: 4, abilityId: 'tank', description: 'Tank: Boro absorbs all damage for his allies.' },
-            { id: 9, name: 'Skeleton Warrior', type: 'Might', hp: 10, ap: 4, abilityId: null, description: 'A sturdy and reliable frontline soldier.' },
-            { id: 12, name: 'Goblin Brawler', type: 'Might', hp: 9, ap: 5, abilityId: 'mobRule', description: 'Mob Rule: Gains +1 AP for each other living Goblin ally.' },
-            { id: 15, name: 'Karn the Barbed', type: 'Might', hp: 9, ap: 5, abilityId: 'bleed', description: 'Bleed: A successful hit causes the target to take damage at the start of each round.', detailedDescription: 'Bleed: A successful hit causes the target to take damage at the start of each round. This effect stacks up to 3 times.' },
-            { id: 23, name: 'Goblin Brute', type: 'Might', hp: 8, ap: 6, abilityId: 'toughness', description: 'Toughness: Gains +1 Max HP for each other living Goblin ally.' },
+            { id: 0, name: 'Sir Reginald', type: 'Might', hp: 10, ap: 4, abilityId: 'lastStand',
+              description: 'Last Stand: Survives one KO with 1 HP.',
+              detailedDescription: 'Last Stand: If knocked out, survives with 1 HP. This ability can only activate once per game.' },
+            { id: 1, name: 'Grak the Crusher', type: 'Might', hp: 8, ap: 6, abilityId: 'crush',
+              description: 'Crush: Attacks ignore damage reduction.',
+              detailedDescription: 'Crush: His attacks ignore all damage reduction effects, including the halving effect from Trinity Advantage.' },
+            { id: 6, name: 'Boro the Bulwark', type: 'Might', hp: 10, ap: 4, abilityId: 'tank',
+              description: 'Tank: Absorbs all damage for allies.',
+              detailedDescription: 'Tank: Boro absorbs all damage for his allies. All single-target attacks and abilities will hit Boro instead of their original target.' },
+            { id: 9, name: 'Skeleton Warrior', type: 'Might', hp: 10, ap: 4, abilityId: null,
+              description: 'A sturdy and reliable frontline soldier.',
+              detailedDescription: 'A sturdy and reliable frontline soldier with no special abilities.' },
+            { id: 12, name: 'Goblin Brawler', type: 'Might', hp: 9, ap: 5, abilityId: 'mobRule',
+              description: 'Mob Rule: +1 AP per other living Goblin.',
+              detailedDescription: 'Mob Rule: Gains +1 Attack Power for each other living Goblin ally on the board.' },
+            { id: 15, name: 'Karn the Barbed', type: 'Might', hp: 9, ap: 5, abilityId: 'bleed',
+              description: 'Bleed: Hits cause stacking damage over time.',
+              detailedDescription: 'Bleed: A successful hit causes the target to take 1 damage at the start of each round. This effect can stack up to 3 times.' },
+            { id: 23, name: 'Goblin Brute', type: 'Might', hp: 8, ap: 6, abilityId: 'toughness',
+              description: 'Toughness: +1 Max HP per other living Goblin.',
+              detailedDescription: 'Toughness: Gains +1 maximum HP for each other living Goblin ally on the board at the start of the game.' },
 
             // Finesse Heroes
-            { id: 2, name: 'Vex', type: 'Finesse', hp: 7, ap: 7, abilityId: 'firstStrike', description: 'First Strike: Attacks first. If she defeats the opponent, she takes no damage.' },
-            { id: 3, name: 'Kaelen', type: 'Finesse', hp: 7, ap: 7, abilityId: 'longBow', description: 'Long Bow: Every other round, deals 2 damage to a random enemy.' },
-            { id: 7, name: 'Lyra Nightwind', type: 'Finesse', hp: 8, ap: 6, abilityId: 'smokeBomb', description: 'Smoke Bomb: The first attack against Lyra misses.' },
-            { id: 10, name: 'Skeleton Archer', type: 'Finesse', hp: 7, ap: 7, abilityId: null, description: 'A balanced archer with no special tricks.' },
-            { id: 13, name: 'Goblin Cutpurse', type: 'Finesse', hp: 7, ap: 7, abilityId: 'ambush', description: 'Ambush: Deals 2 damage to the clashing enemy when on the bench.' },
-            { id: 16, name: 'Seraphina', type: 'Finesse', hp: 7, ap: 7, abilityId: 'riposte', description: 'Riposte: When hit by an ability while not clashing, deals 2 damage back to the attacker.' },
-            { id: 20, name: 'Zephyr, the Tempest', type: 'Finesse', hp: 8, ap: 6, abilityId: 'galeForce', description: 'Gale Force: Before clashing, swaps the enemy with a random teammate on their bench.' },
-            { id: 21, name: 'Goblin Scout', type: 'Finesse', hp: 7, ap: 7, abilityId: 'evasion', description: 'Evasion: The first time this hero is attacked each game, it takes no damage.' },
-            { id: 22, name: 'Goblin Assassin', type: 'Finesse', hp: 6, ap: 8, abilityId: 'opportunist', description: 'Opportunist: Deals +3 damage if the opponent has less HP.' },
+            { id: 2, name: 'Vex', type: 'Finesse', hp: 7, ap: 7, abilityId: 'firstStrike',
+              description: 'First Strike: Attacks first, avoids damage on KO.',
+              detailedDescription: 'First Strike: Attacks first. If she defeats the opponent with her attack, she takes no counter-attack damage.' },
+            { id: 3, name: 'Kaelen', type: 'Finesse', hp: 7, ap: 7, abilityId: 'longBow',
+              description: 'Long Bow: Deals 2 damage every other round.',
+              detailedDescription: 'Long Bow: At the start of every even-numbered round (2, 4, 6...), Kaelen deals 2 damage to a random enemy hero.' },
+            { id: 7, name: 'Lyra Nightwind', type: 'Finesse', hp: 8, ap: 6, abilityId: 'smokeBomb',
+              description: 'Smoke Bomb: The first attack misses.',
+              detailedDescription: 'Smoke Bomb: The first time Lyra would be dealt damage from an attack each game, that damage is ignored.' },
+            { id: 10, name: 'Skeleton Archer', type: 'Finesse', hp: 7, ap: 7, abilityId: null,
+              description: 'A balanced archer with no special tricks.',
+              detailedDescription: 'A balanced archer with no special abilities.' },
+            { id: 13, name: 'Goblin Cutpurse', type: 'Finesse', hp: 7, ap: 7, abilityId: 'ambush',
+              description: 'Ambush: Deals 2 damage from the bench.',
+              detailedDescription: 'Ambush: When another one of your heroes clashes, this hero deals 2 damage to the clashing enemy from the bench.' },
+            { id: 16, name: 'Seraphina', type: 'Finesse', hp: 7, ap: 7, abilityId: 'riposte',
+              description: 'Riposte: Damages heroes who use abilities on her.',
+              detailedDescription: 'Riposte: When hit by an enemy ability while not currently in a clash, deals 2 damage back to the ability\'s caster.' },
+            { id: 20, name: 'Zephyr, the Tempest', type: 'Finesse', hp: 8, ap: 6, abilityId: 'galeForce',
+              description: 'Gale Force: Swaps clashing enemy with a benched one.',
+              detailedDescription: 'Gale Force: Before this hero clashes, it swaps the opposing hero with a random one from their bench.' },
+            { id: 21, name: 'Goblin Scout', type: 'Finesse', hp: 7, ap: 7, abilityId: 'evasion',
+              description: 'Evasion: Dodges the first attack once.',
+              detailedDescription: 'Evasion: The first time this hero is attacked by any source each game, it takes no damage.' },
+            { id: 22, name: 'Goblin Assassin', type: 'Finesse', hp: 6, ap: 8, abilityId: 'opportunist',
+              description: 'Opportunist: +3 damage to weaker foes.',
+              detailedDescription: 'Opportunist: Deals +3 damage if the opponent has less current HP than this hero.' },
 
             // Magic Heroes
-            { id: 4, name: 'Elara', type: 'Magic', hp: 6, ap: 8, abilityId: 'soulSiphon', description: 'Soul Siphon: The first time Elara defeats an enemy, she gains their max HP.' },
-            { id: 5, name: 'Zoltan', type: 'Magic', hp: 5, ap: 9, abilityId: 'overload', description: 'Overload: 50% chance to deal 4 damage to another random enemy or himself.' },
-            { id: 8, name: 'Master Theron', type: 'Magic', hp: 7, ap: 7, abilityId: 'fireball', description: 'Fireball: On round 5, deals 5 damage to all enemies.' },
-            { id: 11, name: 'Skeleton Mage', type: 'Magic', hp: 4, ap: 10, abilityId: null, description: 'A frail but powerful spellcaster.' },
-            { id: 14, name: 'Goblin Bomber', type: 'Magic', hp: 4, ap: 10, abilityId: 'unstableConcoction', description: 'Unstable Concoction: With advantage, explodes, dealing 3 damage to all enemies.' },
-            { id: 17, name: 'Malachi the Gambler', type: 'Magic', hp: 5, ap: 0, abilityId: 'chaosBolt', description: 'Chaos Bolt: Deals 6-18 true damage that cannot be reduced.' },
-            { id: 18, name: 'Gyrion the Trickster', type: 'Magic', hp: 6, ap: 8, abilityId: 'madScramble', description: 'Mad Scramble: After attacking, swaps the positions of two random heroes on the board.' },
-            { id: 19, name: 'Jester of Chaos', type: 'Magic', hp: 7, ap: 7, abilityId: 'boonOfBedlam', description: 'Boon of Bedlam: After attacking, the bolt leaps to another random hero, either dealing 5 damage or healing 5 HP.' }
+            { id: 4, name: 'Elara', type: 'Magic', hp: 6, ap: 8, abilityId: 'soulSiphon',
+              description: 'Soul Siphon: Gains max HP of first KO\'d foe.',
+              detailedDescription: 'Soul Siphon: The first time Elara defeats an enemy, her current and maximum HP are increased by the defeated enemy\'s maximum HP.' },
+            { id: 5, name: 'Zoltan', type: 'Magic', hp: 5, ap: 9, abilityId: 'overload',
+              description: 'Overload: 50% chance for 4 splash damage.',
+              detailedDescription: 'Overload: After clashing, has a 50% chance to deal 4 damage to another random hero on the board (friend or foe).' },
+            { id: 8, name: 'Master Theron', type: 'Magic', hp: 7, ap: 7, abilityId: 'fireball',
+              description: 'Fireball: On round 5, hits all enemies.',
+              detailedDescription: 'Fireball: At the start of round 5, deals 5 damage to all living enemy heroes.' },
+            { id: 11, name: 'Skeleton Mage', type: 'Magic', hp: 4, ap: 10, abilityId: null,
+              description: 'A frail but powerful spellcaster.',
+              detailedDescription: 'A frail but powerful spellcaster with no special abilities.' },
+            { id: 14, name: 'Goblin Bomber', type: 'Magic', hp: 4, ap: 10, abilityId: 'unstableConcoction',
+              description: 'Unstable Concoction: Explodes on advantage.',
+              detailedDescription: 'Unstable Concoction: If this hero has a type advantage in a clash, it explodes, dealing 3 damage to all living enemies.' },
+            { id: 17, name: 'Malachi the Gambler', type: 'Magic', hp: 5, ap: 0, abilityId: 'chaosBolt',
+              description: 'Chaos Bolt: Deals 6-18 true damage.',
+              detailedDescription: 'Chaos Bolt: Deals a random amount of damage from 6 to 18. This damage is \'true\' and cannot be reduced by any means.' },
+            { id: 18, name: 'Gyrion the Trickster', type: 'Magic', hp: 6, ap: 8, abilityId: 'madScramble',
+              description: 'Mad Scramble: Swaps two random heroes.',
+              detailedDescription: 'Mad Scramble: After this hero attacks, it swaps the positions of two random heroes on the entire board (excluding itself and its clash opponent).' },
+            { id: 19, name: 'Jester of Chaos', type: 'Magic', hp: 7, ap: 7, abilityId: 'boonOfBedlam',
+              description: 'Boon of Bedlam: Bolt leaps to heal or harm.',
+              detailedDescription: 'Boon of Bedlam: After this hero attacks, a bolt of energy leaps to another random hero (friend or foe), either dealing 5 damage or healing 5 HP.' }
         ];
 
         const BOSSES = [
@@ -411,6 +459,7 @@
 
                 switch(this.state.gamePhase) {
                     case 'mainMenu': this.drawMainMenuScreen(); break;
+                    case 'quickMatchSelection': this.drawQuickMatchSelectionScreen(); break;
                     case 'difficultySelection': this.drawDifficultySelectionScreen(); break;
                     case 'heroSelection': this.drawHeroSelectionScreen(); break;
                     case 'practiceSelection': this.drawPracticeSelectionScreen(); break;
@@ -422,9 +471,9 @@
                     case 'expertVictory': this.drawExpertVictoryScreen(); break;
                 }
 
-                if (this.state.hoveredHero) {
-                    const { x, y, hero, team } = this.state.hoveredHero;
-                    this.drawCard(x, y, hero, 'hover', team, 1.5);
+                // Draw the tooltip last so it's on top of everything
+                if (this.state.hoveredHero && (this.state.gamePhase === 'playing' || this.state.gamePhase === 'bossBattle')) {
+                    this.drawHoverTooltip(this.state.hoveredHero);
                 }
             }
 
@@ -622,7 +671,7 @@
                                  (this.state.player2Selection && this.state.player2Selection.uuid === hero.uuid);
                 }
 
-                if (isSelected && hero.hp > 0) {
+                if (isSelected && hero.hp > 0 && playerKey !== 'tooltip') {
                     this.ctx.strokeStyle = COLORS.accent;
                     this.ctx.lineWidth = 6 * this.scale * customScale;
                     this.ctx.shadowColor = COLORS.accent;
@@ -658,8 +707,13 @@
 
                 this.ctx.textAlign = 'center';
                 this.ctx.font = `italic ${14 * this.scale * customScale}px 'MedievalSharp'`;
-                const descriptionToDraw = (playerKey === 'viewer' && hero.detailedDescription) ? hero.detailedDescription : hero.description;
-                this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight / 2 - (10 * this.scale * customScale), cardWidth - padding * 1.5, 16 * this.scale * customScale);
+
+                let descriptionToDraw = hero.description;
+                if (playerKey === 'viewer' || playerKey === 'tooltip') {
+                    descriptionToDraw = hero.detailedDescription || hero.description;
+                }
+
+                this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight / 2, cardWidth - padding * 1.5, 16 * this.scale * customScale);
 
                 if (hero.statusEffects && hero.statusEffects.length > 0) {
                     const bleedEffect = hero.statusEffects.find(e => e.type === 'bleed');
@@ -678,6 +732,21 @@
                 }
 
                 this.ctx.restore();
+            }
+
+            drawHoverTooltip(hoveredData) {
+                const { hero } = hoveredData;
+                const cardScale = 2.0;
+                const cardWidth = this.baseCardWidth * this.scale * cardScale;
+                const cardHeight = this.baseCardHeight * this.scale * cardScale;
+                const x = (this.canvas.width - cardWidth) / 2;
+                const y = (this.canvas.height - cardHeight) / 2;
+
+                // Draw a semi-transparent overlay behind the tooltip
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.drawCard(x, y, hero, 'tooltip', [], cardScale);
             }
 
             drawClashAnimation() {
@@ -1035,14 +1104,22 @@
                 this.ctx.restore();
             }
 
-            drawButton(hitboxKey, text, colorScheme) {
+            drawButton(hitboxKey, text, colorScheme, disabled = false) {
                 const hitbox = this.buttonHitboxes[hitboxKey];
                 if (!hitbox) return;
-                const isHovered = this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox);
-                const colors = isHovered ? COLORS.buttonHover : colorScheme;
+
+                const isHovered = !disabled && this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox);
+                let colors;
+                if (disabled) {
+                    colors = { start: COLORS.disabled, end: '#333333' };
+                } else {
+                    colors = isHovered ? COLORS.buttonHover : colorScheme;
+                }
+
                 const gradient = this.ctx.createLinearGradient(hitbox.x, hitbox.y, hitbox.x, hitbox.y + hitbox.height);
                 gradient.addColorStop(0, colors.start);
                 gradient.addColorStop(1, colors.end);
+
                 this.ctx.fillStyle = gradient;
                 this.ctx.beginPath();
                 this.ctx.roundRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height, [10 * this.scale]);
@@ -1050,7 +1127,8 @@
                 this.ctx.strokeStyle = COLORS.buttonBorder;
                 this.ctx.lineWidth = 4 * this.scale;
                 this.ctx.stroke();
-                this.ctx.fillStyle = COLORS.text;
+
+                this.ctx.fillStyle = disabled ? '#9E9E9E' : COLORS.text;
                 this.ctx.font = `bold ${hitbox.height * 0.4}px "Cinzel"`;
                 this.ctx.textAlign = 'center';
                 this.ctx.textBaseline = 'middle';
@@ -1178,7 +1256,7 @@
                 this.ctx.font = `bold ${80 * this.scale}px "Cinzel"`;
                 this.ctx.shadowColor = 'black';
                 this.ctx.shadowBlur = 10;
-                const titleY = this.canvas.height / 2 - 350 * this.scale;
+                const titleY = this.canvas.height / 2 - 250 * this.scale;
                 const remainingText = 'rinity Clash';
                 const textMetrics = this.ctx.measureText(remainingText);
                 const swordWidth = 60 * this.scale;
@@ -1192,19 +1270,54 @@
                 this.ctx.fillText(remainingText, startX + swordWidth, titleY);
                 this.ctx.textAlign = 'center';
                 this.ctx.shadowBlur = 0;
-                const menuItems = ['3v3 Clash', '5v5 Clash', 'Boss Battle', 'Practice', 'Hero Viewer', 'How to Play'];
-                const buttonWidth = 300 * this.scale;
+
+                const menuItems = [
+                    { key: 'campaign', text: 'Campaign', disabled: true },
+                    { key: 'quickmatch', text: 'Quick Match' },
+                    { key: 'heroviewer', text: 'Hero Viewer' },
+                    { key: 'howtoplay', text: 'How to Play' }
+                ];
+
+                const buttonWidth = Math.min(500 * this.scale, this.canvas.width * 0.7);
                 const buttonHeight = 80 * this.scale;
-                const spacing = 30 * this.scale;
+                const spacing = 25 * this.scale;
                 const totalHeight = menuItems.length * buttonHeight + (menuItems.length - 1) * spacing;
-                const menuStartY = (this.canvas.height - totalHeight) / 2;
+                const menuStartY = this.canvas.height / 2 - totalHeight / 2 + 50 * this.scale;
+
                 menuItems.forEach((item, index) => {
                     const x = (this.canvas.width - buttonWidth) / 2;
                     const y = menuStartY + index * (buttonHeight + spacing);
-                    const key = item.toLowerCase().replace(/ /g, '');
-                    this.buttonHitboxes[key] = { x, y, width: buttonWidth, height: buttonHeight };
-                    this.drawButton(key, item, COLORS.button);
+                    this.buttonHitboxes[item.key] = { x, y, width: buttonWidth, height: buttonHeight, disabled: item.disabled };
+                    this.drawButton(item.key, item.text, COLORS.button, item.disabled);
                 });
+            }
+
+            drawQuickMatchSelectionScreen() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.textAlign = 'center';
+                this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                this.ctx.fillText('Quick Match', this.canvas.width / 2, this.canvas.height / 2 - 250 * this.scale);
+
+                const menuItems = [
+                    { key: '3v3clash', text: '3v3 Clash' },
+                    { key: '5v5clash', text: '5v5 Clash' },
+                    { key: 'bossbattle', text: 'Boss Battle' },
+                    { key: 'practice', text: 'Practice' }
+                ];
+
+                const buttonWidth = Math.min(500 * this.scale, this.canvas.width * 0.7);
+                const buttonHeight = 80 * this.scale;
+                const spacing = 25 * this.scale;
+                const totalHeight = menuItems.length * buttonHeight + (menuItems.length - 1) * spacing;
+                const startY = (this.canvas.height - totalHeight) / 2;
+
+                menuItems.forEach((item, index) => {
+                    const x = (this.canvas.width - buttonWidth) / 2;
+                    const y = startY + index * (buttonHeight + spacing);
+                    this.buttonHitboxes[item.key] = { x, y, width: buttonWidth, height: buttonHeight };
+                    this.drawButton(item.key, item.text, COLORS.button);
+                });
+                this.drawBackButton();
             }
 
             drawDifficultySelectionScreen() {
@@ -2342,12 +2455,26 @@
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = event.clientX - rect.left;
                 const mouseY = event.clientY - rect.top;
-                if (this.state.gamePhase !== 'mainMenu' && this.state.gamePhase !== 'gameOver' && this.state.gamePhase !== 'expertVictory') {
-                    const backBtn = this.buttonHitboxes.backToMenu;
-                    if (backBtn && this.isClickInHitbox(mouseX, mouseY, backBtn)) { this.resetGame(); return; }
+
+                const backBtn = this.buttonHitboxes.backToMenu;
+                if (backBtn && this.isClickInHitbox(mouseX, mouseY, backBtn)) {
+                    if (this.state.gamePhase === 'quickMatchSelection') {
+                        this.state.gamePhase = 'mainMenu';
+                    } else {
+                        this.resetGame();
+                    }
+                    return;
                 }
+
+                const backToMainBtn = this.buttonHitboxes.back;
+                 if (backToMainBtn && this.isClickInHitbox(mouseX, mouseY, backToMainBtn)) {
+                    this.state.gamePhase = 'mainMenu';
+                    return;
+                }
+
                 switch (this.state.gamePhase) {
                     case 'mainMenu': this.handleMainMenuClick(mouseX, mouseY); break;
+                    case 'quickMatchSelection': this.handleQuickMatchSelectionClick(mouseX, mouseY); break;
                     case 'difficultySelection': this.handleDifficultySelectionClick(mouseX, mouseY); break;
                     case 'heroSelection': this.handleHeroSelectionClick(mouseX, mouseY); break;
                     case 'practiceSelection': this.handlePracticeSelectionClick(mouseX, mouseY); break;
@@ -2385,12 +2512,28 @@
             }
 
             handleMainMenuClick(mouseX, mouseY) {
+                const quickMatchBtn = this.buttonHitboxes.quickmatch;
+                if (quickMatchBtn && !quickMatchBtn.disabled && this.isClickInHitbox(mouseX, mouseY, quickMatchBtn)) {
+                    this.state.gamePhase = 'quickMatchSelection';
+                    return;
+                }
+                const heroViewerBtn = this.buttonHitboxes.heroviewer;
+                if (heroViewerBtn && !heroViewerBtn.disabled && this.isClickInHitbox(mouseX, mouseY, heroViewerBtn)) {
+                    this.state.gamePhase = 'heroViewer';
+                    return;
+                }
+                const howToPlayBtn = this.buttonHitboxes.howtoplay;
+                if (howToPlayBtn && !howToPlayBtn.disabled && this.isClickInHitbox(mouseX, mouseY, howToPlayBtn)) {
+                    this.state.gamePhase = 'howToPlay';
+                    return;
+                }
+            }
+
+            handleQuickMatchSelectionClick(mouseX, mouseY) {
                 if (this.buttonHitboxes['3v3clash']?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['3v3clash'])) { this.state.teamSize = 3; this.state.gamePhase = 'difficultySelection'; }
                 if (this.buttonHitboxes['5v5clash']?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes['5v5clash'])) { this.state.teamSize = 5; this.state.gamePhase = 'difficultySelection'; }
                 if (this.buttonHitboxes.bossbattle?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.bossbattle)) { this.state.difficulty = 'boss'; this.state.teamSize = 5; this.state.gamePhase = 'heroSelection'; }
                 if (this.buttonHitboxes.practice?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.practice)) { this.state.teamSize = 3; this.state.gamePhase = 'practiceSelection'; }
-                if (this.buttonHitboxes.heroviewer?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.heroviewer)) { this.state.gamePhase = 'heroViewer'; }
-                if (this.buttonHitboxes.howtoplay?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.howtoplay)) { this.state.gamePhase = 'howToPlay'; }
             }
 
             handleDifficultySelectionClick(mouseX, mouseY) {
@@ -2467,20 +2610,18 @@
             handleHeroViewerClick(mouseX, mouseY) {
                 if (this.buttonHitboxes.previous?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.previous)) { this.state.heroViewerIndex = (this.state.heroViewerIndex - 1 + HEROES.length) % HEROES.length; }
                 if (this.buttonHitboxes.next?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.next)) { this.state.heroViewerIndex = (this.state.heroViewerIndex + 1) % HEROES.length; }
-                if (this.buttonHitboxes.back?.width && this.isClickInHitbox(mouseX, mouseY, this.buttonHitboxes.back)) { this.state.gamePhase = 'mainMenu'; }
             }
 
             handleHowToPlayClick(mouseX, mouseY) {
-                const backBtn = this.buttonHitboxes.back;
-                if (backBtn && this.isClickInHitbox(mouseX, mouseY, backBtn)) {
-                    this.state.gamePhase = 'mainMenu';
-                }
+                // The generic back button is handled in handleCanvasClick now
             }
 
             handlePlayingClick(mouseX, mouseY) {
-                if (this.state.isClashing) return;
+                if (this.state.isClashing || this.state.winner) return;
+
                 const clashBtn = this.buttonHitboxes.clash;
                 if (clashBtn && this.isClickInHitbox(mouseX, mouseY, clashBtn)) { this.resolveClash(); return; }
+
                 for (const hitbox of this.cardHitboxes.player1) {
                     if (this.isClickInHitbox(mouseX, mouseY, hitbox) && hitbox.hero.hp > 0) {
                         this.state.player1Selection = hitbox.hero;
@@ -2503,7 +2644,14 @@
             resizeCanvas() {
                 this.canvas.width = window.innerWidth;
                 this.canvas.height = window.innerHeight;
-                this.scale = Math.min(this.canvas.width / this.baseWidth, this.canvas.height / this.baseHeight);
+
+                if (this.canvas.width / this.canvas.height > this.baseWidth / this.baseHeight) {
+                    // Wider aspect ratio than base (e.g. ultrawide) -> scale by height
+                    this.scale = this.canvas.height / this.baseHeight;
+                } else {
+                    // Taller or same aspect ratio (e.g. mobile portrait) -> scale by width
+                    this.scale = this.canvas.width / this.baseWidth;
+                }
             }
         }
 
