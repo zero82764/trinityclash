@@ -1958,8 +1958,24 @@
 
                 if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'cleave') {
                     this.state.abilityAnimations.push({ type: 'cleave', progress: 0, speed: 0.03 });
-                    this.state.player1Team.forEach(hero => {
-                        if (hero.hp > 0) {
+                    const playerTeam = this.state.player1Team;
+                    const livingHeroes = playerTeam.filter(h => h.hp > 0);
+                    const taunter = livingHeroes.find(h => h.abilityId === 'tank');
+
+                    if (taunter) {
+                        const totalDamage = livingHeroes.length * 4;
+                        this.log([
+                            { text: taunter.name, color: COLORS[taunter.type.toLowerCase()] },
+                            { text: ' absorbs the Cleave, taking ', color: COLORS.info },
+                            { text: `${totalDamage} total damage!`, color: COLORS.damage }
+                        ]);
+                        taunter.hp -= totalDamage;
+                        this.checkHeroKO(taunter);
+                        if (taunter.hp > 0 && taunter.abilityId === 'riposte') {
+                            this.handleRiposte(taunter, p2);
+                        }
+                    } else {
+                        livingHeroes.forEach(hero => {
                             hero.hp -= 4;
                             this.log([
                                 { text: 'Cleave hits ', color: COLORS.ability },
@@ -1970,8 +1986,8 @@
                             if (hero.hp > 0 && hero.abilityId === 'riposte') {
                                 this.handleRiposte(hero, p2);
                             }
-                        }
-                    });
+                        });
+                    }
                 } else if (this.state.gamePhase === 'bossBattle' && this.state.bossActiveAbility === 'intimidation') {
                     this.state.abilityAnimations.push({ type: 'intimidation', progress: 0, speed: 0.03 });
                 } else {
@@ -2134,11 +2150,15 @@
                 }
 
                 let p1Target = p1, p2Target = p2;
-                if (this.state.gamePhase !== 'bossBattle') {
-                    const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p1Taunter && p1Taunter.uuid !== p1.uuid) { p1Target = p1Taunter; this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
-                    const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
-                    if (p2Taunter && p2Taunter.uuid !== p2.uuid) { p2Target = p2Taunter; this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]); }
+                const p1Taunter = this.state.player1Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                if (p1Taunter && p1Taunter.uuid !== p1.uuid) {
+                    p1Target = p1Taunter;
+                    this.log([{ text: p1Taunter.name, color: COLORS[p1Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]);
+                }
+                const p2Taunter = this.state.player2Team.find(h => h.abilityId === 'tank' && h.hp > 0);
+                if (p2Taunter && p2Taunter.uuid !== p2.uuid) {
+                    p2Target = p2Taunter;
+                    this.log([{ text: p2Taunter.name, color: COLORS[p2Taunter.type.toLowerCase()] }, { text: ' absorbs the attack!', color: COLORS.info }]);
                 }
 
                 let finalP1Damage = p1Damage, finalP2Damage = p2Damage;
