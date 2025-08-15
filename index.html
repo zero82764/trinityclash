@@ -197,40 +197,106 @@
                         let remainingHeroes = deepCopyHeroes.filter(hero => !playerHeroIds.includes(hero.id));
 
                         if (this.state.difficulty === 'expert') {
+                            const team = [];
+                            const pickedIds = new Set();
+
+                            // --- Synergy Check: Goblins ---
+                            const availableGoblins = remainingHeroes.filter(h => h.name.includes('Goblin'));
+                            if (availableGoblins.length >= 2 && Math.random() < 0.6) { // 60% chance to go for Goblin synergy
+                                availableGoblins.forEach(goblin => {
+                                    if (team.length < this.state.teamSize) {
+                                        team.push(goblin);
+                                        pickedIds.add(goblin.id);
+                                    }
+                                });
+                            }
+
+                            // --- Counter-Picking Logic ---
                             const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
                             this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
                             const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
                             const typePriority = Object.keys(playerTypes)
                                 .sort((a, b) => playerTypes[b] - playerTypes[a])
                                 .map(type => counterType[type]);
-                            this.state.player2Team = [];
-                            const pickedIds = new Set();
-                            for (let i = 0; i < this.state.teamSize; i++) {
+
+                            const getPowerScore = (hero) => hero.hp + hero.ap;
+
+                            while (team.length < this.state.teamSize) {
                                 let pickedHero = null;
+                                let bestCounter = null;
+
+                                // Find the best hero based on counter-type priority
                                 for (const type of typePriority) {
                                     const availableCounterHeroes = remainingHeroes.filter(h => h.type === type && !pickedIds.has(h.id));
                                     if (availableCounterHeroes.length > 0) {
-                                        pickedHero = availableCounterHeroes[Math.floor(Math.random() * availableCounterHeroes.length)];
-                                        break;
+                                        availableCounterHeroes.sort((a, b) => getPowerScore(b) - getPowerScore(a));
+                                        bestCounter = availableCounterHeroes[0];
+                                        break; // Found the best hero in the highest priority counter type
                                     }
                                 }
+
+                                pickedHero = bestCounter;
+
+                                // If no counter was found, pick the strongest remaining hero overall
                                 if (!pickedHero) {
                                     const trulyRemaining = remainingHeroes.filter(h => !pickedIds.has(h.id));
-                                    if(trulyRemaining.length > 0) {
-                                        pickedHero = trulyRemaining[Math.floor(Math.random() * trulyRemaining.length)];
+                                    if (trulyRemaining.length > 0) {
+                                        trulyRemaining.sort((a, b) => getPowerScore(b) - getPowerScore(a));
+                                        pickedHero = trulyRemaining[0];
                                     }
                                 }
-                                if(pickedHero) {
-                                    this.state.player2Team.push(pickedHero);
+
+                                if (pickedHero) {
+                                    team.push(pickedHero);
                                     pickedIds.add(pickedHero.id);
+                                } else {
+                                    break; // No more heroes to pick
                                 }
                             }
-                        } else {
-                            for (let i = remainingHeroes.length - 1; i > 0; i--) {
-                                const j = Math.floor(Math.random() * (i + 1));
-                                [remainingHeroes[i], remainingHeroes[j]] = [remainingHeroes[j], remainingHeroes[i]];
+                            this.state.player2Team = team;
+                        } else { // 'normal' - AI tries to build a balanced team
+                            const might = remainingHeroes.filter(h => h.type === 'Might');
+                            const finesse = remainingHeroes.filter(h => h.type === 'Finesse');
+                            const magic = remainingHeroes.filter(h => h.type === 'Magic');
+
+                            // Shuffle each type pool for variety
+                            for (let i = might.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[might[i], might[j]] = [might[j], might[i]]; }
+                            for (let i = finesse.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[finesse[i], finesse[j]] = [finesse[j], finesse[i]]; }
+                            for (let i = magic.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[magic[i], magic[j]] = [magic[j], magic[i]]; }
+
+                            const team = [];
+                            const pickedIds = new Set();
+
+                            // Attempt to pick one of each type first if the team is not full
+                            if (team.length < this.state.teamSize && might.length > 0) {
+                                const hero = might.pop();
+                                team.push(hero);
+                                pickedIds.add(hero.id);
                             }
-                            this.state.player2Team = remainingHeroes.slice(0, this.state.teamSize);
+                            if (team.length < this.state.teamSize && finesse.length > 0) {
+                                const hero = finesse.pop();
+                                team.push(hero);
+                                pickedIds.add(hero.id);
+                            }
+                            if (team.length < this.state.teamSize && magic.length > 0) {
+                                const hero = magic.pop();
+                                team.push(hero);
+                                pickedIds.add(hero.id);
+                            }
+
+                            // Fill the rest of the team slots
+                            let availablePool = remainingHeroes.filter(h => !pickedIds.has(h.id));
+                            // Shuffle the remaining pool
+                            for (let i = availablePool.length - 1; i > 0; i--) {
+                                const j = Math.floor(Math.random() * (i + 1));
+                                [availablePool[i], availablePool[j]] = [availablePool[j], availablePool[i]];
+                            }
+
+                            while (team.length < this.state.teamSize && availablePool.length > 0) {
+                                team.push(availablePool.pop());
+                            }
+
+                            this.state.player2Team = team;
                         }
                     }
                 }
