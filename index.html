@@ -1635,7 +1635,35 @@
                 if (this.state.gamePhase === 'bossBattle') {
                     p2 = this.state.player2Team[0];
                     const abilities = p2.abilities;
-                    this.state.bossActiveAbility = abilities[Math.floor(Math.random() * abilities.length)];
+                    let chosenAbility = null;
+
+                    // --- Boss AI Strategic Decision ---
+                    const livingPlayerHeroes = this.state.player1Team.filter(h => h.hp > 0).length;
+                    const playerAttackerAP = this.getHeroCurrentAP(p1, this.state.player1Team);
+
+                    // Simulate potential damage with Ram
+                    const p1HasAdvantage = (p1.type === 'Might' && p2.type === 'Finesse') || (p1.type === 'Finesse' && p2.type === 'Magic') || (p1.type === 'Magic' && p2.type === 'Might');
+                    const p2HasAdvantage = (p2.type === 'Might' && p1.type === 'Finesse') || (p2.type === 'Finesse' && p1.type === 'Magic') || (p2.type === 'Magic' && p1.type === 'Might');
+                    let ramDamage = this.getHeroCurrentAP(p2, this.state.player2Team) + 5;
+                    if (p2HasAdvantage) { ramDamage *= 2; }
+                    if (p1HasAdvantage) { ramDamage = Math.ceil(ramDamage / 2); }
+
+                    // Decide ability based on situation
+                    if (p1.hp <= ramDamage && Math.random() < 0.8) {
+                        // 80% chance to use Ram for a lethal blow
+                        chosenAbility = 'ram';
+                    } else if (livingPlayerHeroes >= 3 && Math.random() < 0.7) {
+                        // 70% chance to Cleave when there are multiple targets
+                        chosenAbility = 'cleave';
+                    } else if (playerAttackerAP >= 8 && Math.random() < 0.7) {
+                        // 70% chance to Intimidate a high-damage threat
+                        chosenAbility = 'intimidation';
+                    } else {
+                        // Otherwise, pick a random ability
+                        chosenAbility = abilities[Math.floor(Math.random() * abilities.length)];
+                    }
+
+                    this.state.bossActiveAbility = chosenAbility;
                     this.log([
                         { text: 'The Minotaur uses ', color: COLORS.might },
                         { text: `${this.state.bossActiveAbility.toUpperCase()}!`, color: COLORS.ability }
@@ -1644,14 +1672,56 @@
                     let p2Team = this.state.player2Team.filter(h => h.hp > 0);
                     if (p2Team.length === 0) { this.checkGameOver(); return; }
                     
-                    if (this.state.difficulty === 'easy' || this.state.difficulty === 'normal') {
-                        p2 = p2Team[Math.floor(Math.random() * p2Team.length)];
-                    } else {
+                    if (this.state.difficulty === 'easy') {
+                        // Easy AI: Still makes mistakes. Ranks moves and picks from the better half.
+                        const choices = p2Team.map(opponent => {
+                            const sim = this.advancedSimulateClash(p1, opponent);
+                            // Simple score: damage dealt minus damage taken
+                            const score = sim.p2Dealt - sim.p1Dealt;
+                            return { hero: opponent, score: score };
+                        });
+                        choices.sort((a, b) => b.score - a.score); // Sort descending by score
+                        const topHalf = choices.slice(0, Math.ceil(choices.length / 2));
+                        p2 = topHalf[Math.floor(Math.random() * topHalf.length)].hero;
+
+                    } else if (this.state.difficulty === 'normal') {
+                        // Normal AI: Picks the best move based on simple damage exchange.
                         let bestChoice = null;
                         let maxScore = -Infinity;
                         p2Team.forEach(opponent => {
-                            const [p1Dmg, p2Dmg] = this.simulateClash(p1, opponent);
-                            const score = p2Dmg - p1Dmg;
+                            const sim = this.advancedSimulateClash(p1, opponent);
+                            const score = sim.p2Dealt - sim.p1Dealt;
+                            if (score > maxScore) {
+                                maxScore = score;
+                                bestChoice = opponent;
+                            }
+                        });
+                        p2 = bestChoice;
+                    } else { // expert
+                        // Expert AI: Uses advanced simulation and a better scoring system.
+                        // It prioritizes KOs and favorable trades.
+                        let bestChoice = null;
+                        let maxScore = -Infinity;
+
+                        p2Team.forEach(opponent => {
+                            const sim = this.advancedSimulateClash(p1, opponent);
+
+                            let score = 0;
+                            // Base score is the net health swing.
+                            // A positive score means the AI came out ahead on damage.
+                            score += sim.p1Dealt - sim.p2Dealt;
+
+                            // Huge bonus for knocking out an enemy.
+                            if (sim.p1FinalHp <= 0) {
+                                score += 1000;
+                            }
+
+                            // Huge penalty for losing a hero, but slightly less than the KO bonus
+                            // to encourage mutual destruction over just dying.
+                            if (sim.p2FinalHp <= 0) {
+                                score -= 999;
+                            }
+
                             if (score > maxScore) {
                                 maxScore = score;
                                 bestChoice = opponent;
@@ -1752,6 +1822,51 @@
                 if (p1HasAdvantage) { p1Damage *= 2; p2Damage = Math.ceil(p2Damage / 2); } 
                 else if (p2HasAdvantage) { p2Damage *= 2; p1Damage = Math.ceil(p1Damage / 2); }
                 return [p1Damage, p2Damage];
+            }
+
+            advancedSimulateClash(p1, p2) {
+                const simP1 = JSON.parse(JSON.stringify(p1));
+                const simP2 = JSON.parse(JSON.stringify(p2));
+
+                let p1Damage = this.getHeroCurrentAP(simP1, this.state.player1Team);
+                let p2Damage = this.getHeroCurrentAP(simP2, this.state.player2Team);
+
+                const p1HasAdvantage = (simP1.type === 'Might' && simP2.type === 'Finesse') || (simP1.type === 'Finesse' && simP2.type === 'Magic') || (simP1.type === 'Magic' && simP2.type === 'Might');
+                const p2HasAdvantage = (simP2.type === 'Might' && simP1.type === 'Finesse') || (simP2.type === 'Finesse' && simP1.type === 'Magic') || (simP2.type === 'Magic' && simP1.type === 'Might');
+
+                if (p1HasAdvantage) {
+                    p1Damage *= 2;
+                    if (simP2.abilityId !== 'chaosBolt' && simP2.abilityId !== 'crush') {
+                        p2Damage = Math.ceil(p2Damage / 2);
+                    }
+                } else if (p2HasAdvantage) {
+                    p2Damage *= 2;
+                    if (simP1.abilityId !== 'chaosBolt' && simP1.abilityId !== 'crush') {
+                        p1Damage = Math.ceil(p1Damage / 2);
+                    }
+                }
+
+                let finalP1Damage = p1Damage;
+                let finalP2Damage = p2Damage;
+
+                if (simP1.abilityId === 'firstStrike' && finalP1Damage >= simP2.hp) {
+                    finalP2Damage = 0;
+                }
+                if (simP2.abilityId === 'firstStrike' && finalP2Damage >= simP1.hp) {
+                    finalP1Damage = 0;
+                }
+
+                if (simP1.abilityId === 'smokeBomb' && !simP1.smokeBombUsed) {
+                    finalP2Damage = 0;
+                }
+                if (simP2.abilityId === 'smokeBomb' && !simP2.smokeBombUsed) {
+                    finalP1Damage = 0;
+                }
+
+                const p1FinalHp = simP1.hp - finalP2Damage;
+                const p2FinalHp = simP2.hp - finalP1Damage;
+
+                return { p1FinalHp, p2FinalHp, p1Dealt: finalP1Damage, p2Dealt: finalP2Damage };
             }
 
             triggerImpact() {
