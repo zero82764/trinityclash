@@ -174,6 +174,7 @@
                 window.addEventListener('resize', () => this.resizeCanvas());
                 this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('wheel', (e) => this.handleMouseWheel(e), { passive: false });
                 this.gameLoop();
             }
 
@@ -199,6 +200,7 @@
                     hoveredHero: null,
                     abilityAnimations: [],
                     battleLog: [[]],
+                    battleLogScrollOffset: 0,
                     confettiParticles: [],
                     bossActiveAbility: null,
                     nextUUID: 1, // Unique ID counter for hero instances
@@ -541,6 +543,30 @@
                 const y = this.canvas.height - logHeight;
                 const height = logHeight - (10 * this.scale);
 
+                this.battleLogHitbox = { x, y, width, height };
+
+                // --- Calculate Content Height & Max Scroll ---
+                const lineHeight = 18 * this.scale;
+                const headerHeight = lineHeight * 1.5;
+                const topPadding = 40 * this.scale;
+                const bottomPadding = 15 * this.scale;
+                const contentAreaHeight = height - topPadding - bottomPadding;
+
+                let totalContentHeight = 0;
+                const allRounds = this.state.battleLog;
+                for (let i = 0; i < allRounds.length; i++) {
+                    totalContentHeight += allRounds[i].length * lineHeight;
+                    if (i > 0) {
+                        totalContentHeight += headerHeight;
+                    }
+                }
+
+                const maxScroll = Math.max(0, totalContentHeight - contentAreaHeight);
+
+                // Clamp scroll offset
+                this.state.battleLogScrollOffset = Math.max(0, Math.min(this.state.battleLogScrollOffset, maxScroll));
+
+                // Draw background and border
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 this.ctx.strokeStyle = COLORS.buttonBorder;
                 this.ctx.lineWidth = 2 * this.scale;
@@ -549,24 +575,44 @@
                 this.ctx.fill();
                 this.ctx.stroke();
 
+                // Draw Title
                 this.ctx.fillStyle = COLORS.accent;
                 this.ctx.font = `bold ${20 * this.scale}px 'Cinzel'`;
                 this.ctx.textAlign = 'left';
                 this.ctx.fillText('Battle Log', x + (15 * this.scale), y + (25 * this.scale));
 
-                let logY = y + height - (15 * this.scale);
-                const lineHeight = 18 * this.scale;
-                const padding = 15 * this.scale;
+                // --- Draw Scrollbar ---
+                if (maxScroll > 0) {
+                    const scrollbarWidth = 10 * this.scale;
+                    const scrollbarX = x + width - scrollbarWidth - (5 * this.scale);
+                    const scrollbarTrackY = y + (30 * this.scale);
+                    const scrollbarTrackHeight = height - (40 * this.scale);
 
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; // Track
+                    this.ctx.fillRect(scrollbarX, scrollbarTrackY, scrollbarWidth, scrollbarTrackHeight);
+
+                    const handleHeight = Math.max(20 * this.scale, scrollbarTrackHeight * (contentAreaHeight / totalContentHeight));
+                    const scrollPercentage = this.state.battleLogScrollOffset / maxScroll;
+                    const handleY = scrollbarTrackY + (1 - scrollPercentage) * (scrollbarTrackHeight - handleHeight);
+
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.5)'; // Handle
+                    this.ctx.fillRect(scrollbarX, handleY, scrollbarWidth, handleHeight);
+                }
+
+                // --- Draw Log Content (Clipped) ---
+                this.ctx.save();
+                const clipY = y + (30 * this.scale);
+                this.ctx.rect(x + 5, clipY, width - 5, height - (35 * this.scale));
+                this.ctx.clip();
+
+                let logY = y + height - bottomPadding + this.state.battleLogScrollOffset;
                 const logsToDraw = this.state.battleLog.slice().reverse();
 
                 for (const [roundIndex, roundLog] of logsToDraw.entries()) {
-                    if (logY < y + (35 * this.scale)) break;
-
+                    // Draw log entries for the current round
                     for (let i = roundLog.length - 1; i >= 0; i--) {
-                        if (logY < y + (40 * this.scale)) break;
                         const entry = roundLog[i];
-                        let currentX = x + padding;
+                        let currentX = x + (15 * this.scale);
                         this.ctx.textAlign = 'left';
                         entry.forEach(part => {
                             this.ctx.fillStyle = part.color;
@@ -577,16 +623,16 @@
                         logY -= lineHeight;
                     }
 
-                    if (logY < y + (35 * this.scale)) break;
                     const roundNumber = this.state.round - roundIndex;
-                    if (roundNumber > 0) {
+                    if (roundNumber > 1) {
                         this.ctx.fillStyle = COLORS.accent;
                         this.ctx.font = `bold ${16 * this.scale}px 'Cinzel'`;
                         this.ctx.textAlign = 'center';
-                        this.ctx.fillText(`--- Round ${roundNumber} ---`, x + width / 2, logY);
-                        logY -= lineHeight * 1.5;
+                        this.ctx.fillText(`--- Round ${roundNumber - 1} ---`, x + width / 2, logY);
+                        logY -= headerHeight;
                     }
                 }
+                this.ctx.restore();
             }
 
             drawTeam(team, playerKey) {
@@ -1655,9 +1701,6 @@
             startNewRound() {
                 this.state.round++;
                 this.state.battleLog.push([]);
-                if (this.state.battleLog.length > 2) {
-                    this.state.battleLog.shift();
-                }
                 this.state.isClashing = false;
                 this.state.bossActiveAbility = null;
 
@@ -2480,6 +2523,20 @@
                     if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
                 }
                 this.state.hoveredHero = foundHero;
+            }
+
+            handleMouseWheel(event) {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                if (this.battleLogHitbox && this.isClickInHitbox(mouseX, mouseY, this.battleLogHitbox)) {
+                    event.preventDefault();
+                    this.state.battleLogScrollOffset += event.deltaY * 0.5;
+                    if (this.state.battleLogScrollOffset < 0) {
+                        this.state.battleLogScrollOffset = 0;
+                    }
+                }
             }
 
             handleMainMenuClick(mouseX, mouseY) {
