@@ -361,7 +361,75 @@
                                 }
                             }
                             this.state.player2Team = team;
-                        } else { // 'normal' - AI tries to build a balanced team
+                        } else if (this.state.difficulty === 'impossible') {
+                            const team = [];
+                            const pickedIds = new Set();
+                            const playerTeam = this.state.player1Team;
+
+                            const counterMap = {
+                                'tank': ['crush', 'galeForce'], // Abilities that counter 'tank'
+                                'lastStand': ['firstStrike', 'bleed'], // Abilities that can bypass or outlast 'lastStand'
+                                'smokeBomb': ['fireball', 'overload'], // Area/multi-hit abilities
+                                'evasion': ['fireball', 'overload'],
+                                'bleed': ['soulSiphon'], // High value targets for health steal
+                            };
+
+                            const getTypeAdvantage = (typeA, typeB) => {
+                                if ((typeA === 'Might' && typeB === 'Finesse') ||
+                                    (typeA === 'Finesse' && typeB === 'Magic') ||
+                                    (typeA === 'Magic' && typeB === 'Might')) return 1;
+                                if ((typeB === 'Might' && typeA === 'Finesse') ||
+                                    (typeB === 'Finesse' && typeA === 'Magic') ||
+                                    (typeB === 'Magic' && typeA === 'Might')) return -1;
+                                return 0;
+                            };
+
+                            while (team.length < this.state.teamSize) {
+                                let bestPick = null;
+                                let maxScore = -Infinity;
+
+                                for (const candidate of remainingHeroes.filter(h => !pickedIds.has(h.id))) {
+                                    let score = 0;
+                                    // 1. Raw power score
+                                    score += candidate.hp + candidate.ap;
+
+                                    // 2. Type advantage score
+                                    let typeScore = 0;
+                                    playerTeam.forEach(playerHero => {
+                                        typeScore += getTypeAdvantage(candidate.type, playerHero.type);
+                                    });
+                                    score += typeScore * 5; // Heavily weight type advantage
+
+                                    // 3. Ability counter score
+                                    playerTeam.forEach(playerHero => {
+                                        if (playerHero.abilityId && counterMap[playerHero.abilityId]) {
+                                            if (counterMap[playerHero.abilityId].includes(candidate.abilityId)) {
+                                                score += 20; // Huge bonus for a direct ability counter
+                                            }
+                                        }
+                                    });
+
+                                    // 4. Synergy with own team
+                                    if (candidate.name.includes('Goblin')) {
+                                        score += team.filter(h => h.name.includes('Goblin')).length * 10;
+                                    }
+
+                                    if (score > maxScore) {
+                                        maxScore = score;
+                                        bestPick = candidate;
+                                    }
+                                }
+
+                                if (bestPick) {
+                                    team.push(bestPick);
+                                    pickedIds.add(bestPick.id);
+                                } else {
+                                    break; // No more heroes to pick
+                                }
+                            }
+                             this.state.player2Team = team;
+                        }
+                        else { // 'normal' - AI tries to build a balanced team
                             const might = remainingHeroes.filter(h => h.type === 'Might');
                             const finesse = remainingHeroes.filter(h => h.type === 'Finesse');
                             const magic = remainingHeroes.filter(h => h.type === 'Magic');
@@ -1439,7 +1507,7 @@
                 this.ctx.textAlign = 'center';
                 this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
                 this.ctx.fillText('Select Difficulty', this.canvas.width / 2, this.canvas.height / 2 - 200 * this.scale);
-                const difficulties = ['Easy', 'Normal', 'Expert'];
+                const difficulties = ['Easy', 'Normal', 'Expert', 'Impossible'];
                 const buttonWidth = 300 * this.scale;
                 const buttonHeight = 80 * this.scale;
                 const spacing = 30 * this.scale;
@@ -1978,7 +2046,11 @@
                             }
                         });
                         p2 = bestChoice;
-                    } else { // expert
+                    } else if (this.state.difficulty === 'impossible') {
+                        const bestMove = this.findBestMove(p1, this.state.player2Team, this.state.player1Team);
+                        p2 = bestMove.hero;
+                    }
+                    else { // expert
                         // Expert AI: Uses advanced simulation and a better scoring system.
                         // It prioritizes KOs and favorable trades.
                         let bestChoice = null;
@@ -2073,6 +2145,64 @@
 
                 if (this.checkGameOver()) return;
                 this.state.pendingClash = { p1, p2 };
+            }
+
+            findBestMove(playerAttacker, aiTeam, playerTeam, depth = 0, maxDepth = 1) {
+                let bestMove = { hero: null, score: -Infinity };
+                const livingAiHeroes = aiTeam.filter(h => h.hp > 0);
+                const livingPlayerHeroes = playerTeam.filter(h => h.hp > 0);
+
+                if (depth >= maxDepth || livingAiHeroes.length === 0 || livingPlayerHeroes.length === 0) {
+                    return { hero: null, score: this.evaluateBoard(aiTeam, playerTeam) };
+                }
+
+                for (const aiHero of livingAiHeroes) {
+                    const { p1FinalHp, p2FinalHp } = this.advancedSimulateClash(playerAttacker, aiHero);
+
+                    const nextPlayerTeamState = JSON.parse(JSON.stringify(playerTeam));
+                    const nextAiTeamState = JSON.parse(JSON.stringify(aiTeam));
+
+                    const nextPlayerAttacker = nextPlayerTeamState.find(h => h.uuid === playerAttacker.uuid);
+                    const nextAiHero = nextAiTeamState.find(h => h.uuid === aiHero.uuid);
+
+                    if (nextPlayerAttacker) nextPlayerAttacker.hp = p1FinalHp;
+                    if (nextAiHero) nextAiHero.hp = p2FinalHp;
+
+                    // After AI's move, simulate player's best response
+                    let worstCaseScore = Infinity;
+                    const livingPlayerHeroesAfterClash = nextPlayerTeamState.filter(h => h.hp > 0);
+
+                    if (livingPlayerHeroesAfterClash.length > 0) {
+                        for (const nextPlayerHero of livingPlayerHeroesAfterClash) {
+                             // The AI needs to find its best defender against the player's next likely attacker
+                            const counterMove = this.findBestMove(nextPlayerHero, nextAiTeamState, nextPlayerTeamState, depth + 1, maxDepth);
+                            worstCaseScore = Math.min(worstCaseScore, counterMove.score);
+                        }
+                    } else {
+                        // If player has no heroes left, it's a winning state for the AI
+                        worstCaseScore = this.evaluateBoard(nextAiTeamState, nextPlayerTeamState);
+                    }
+
+                    if (worstCaseScore > bestMove.score) {
+                        bestMove = { hero: aiHero, score: worstCaseScore };
+                    }
+                }
+
+                if (!bestMove.hero) {
+                    bestMove.hero = livingAiHeroes[0] || null;
+                }
+                return bestMove;
+            }
+
+            evaluateBoard(aiTeam, playerTeam) {
+                let score = 0;
+                // Sum of HP difference
+                score += aiTeam.reduce((acc, h) => acc + h.hp, 0);
+                score -= playerTeam.reduce((acc, h) => acc + h.hp, 0);
+                // Bonus for each living hero
+                score += aiTeam.filter(h => h.hp > 0).length * 20;
+                score -= playerTeam.filter(h => h.hp > 0).length * 20;
+                return score;
             }
 
             simulateClash(p1, p2) {
@@ -2633,7 +2763,7 @@
             }
 
             handleDifficultySelectionClick(mouseX, mouseY) {
-                for (const level of ['easy', 'normal', 'expert']) {
+                for (const level of ['easy', 'normal', 'expert', 'impossible']) {
                     const btn = this.buttonHitboxes[level];
                     if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) {
                         this.state.difficulty = level;
