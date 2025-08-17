@@ -545,13 +545,20 @@
 
                 this.battleLogHitbox = { x, y, width, height };
 
-                // --- Calculate Content Height & Max Scroll ---
+                // --- Define layout constants ---
                 const lineHeight = 18 * this.scale;
                 const headerHeight = lineHeight * 1.5;
-                const topPadding = 40 * this.scale;
-                const bottomPadding = 15 * this.scale;
-                const contentAreaHeight = height - topPadding - bottomPadding;
+                const padding = 15 * this.scale;
+                const scrollbarWidth = 10 * this.scale;
+                const scrollbarPadding = 5 * this.scale;
 
+                const titleYPos = y + (25 * this.scale);
+                const contentX = x + padding;
+                const contentY = y + (35 * this.scale);
+                const contentWidth = width - (padding * 2) - scrollbarWidth - scrollbarPadding;
+                const contentHeight = height - (40 * this.scale);
+
+                // --- Calculate Content Height & Max Scroll ---
                 let totalContentHeight = 0;
                 const allRounds = this.state.battleLog;
                 for (let i = 0; i < allRounds.length; i++) {
@@ -560,13 +567,10 @@
                         totalContentHeight += headerHeight;
                     }
                 }
-
-                const maxScroll = Math.max(0, totalContentHeight - contentAreaHeight);
-
-                // Clamp scroll offset
+                const maxScroll = Math.max(0, totalContentHeight - contentHeight);
                 this.state.battleLogScrollOffset = Math.max(0, Math.min(this.state.battleLogScrollOffset, maxScroll));
 
-                // Draw background and border
+                // --- Draw background and border ---
                 this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
                 this.ctx.strokeStyle = COLORS.buttonBorder;
                 this.ctx.lineWidth = 2 * this.scale;
@@ -575,23 +579,22 @@
                 this.ctx.fill();
                 this.ctx.stroke();
 
-                // Draw Title
+                // --- Draw Title ---
                 this.ctx.fillStyle = COLORS.accent;
                 this.ctx.font = `bold ${20 * this.scale}px 'Cinzel'`;
                 this.ctx.textAlign = 'left';
-                this.ctx.fillText('Battle Log', x + (15 * this.scale), y + (25 * this.scale));
+                this.ctx.fillText('Battle Log', contentX, titleYPos);
 
                 // --- Draw Scrollbar ---
                 if (maxScroll > 0) {
-                    const scrollbarWidth = 10 * this.scale;
-                    const scrollbarX = x + width - scrollbarWidth - (5 * this.scale);
-                    const scrollbarTrackY = y + (30 * this.scale);
-                    const scrollbarTrackHeight = height - (40 * this.scale);
+                    const scrollbarX = x + width - scrollbarWidth - scrollbarPadding;
+                    const scrollbarTrackY = contentY - (5 * this.scale);
+                    const scrollbarTrackHeight = contentHeight + (10 * this.scale);
 
                     this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; // Track
                     this.ctx.fillRect(scrollbarX, scrollbarTrackY, scrollbarWidth, scrollbarTrackHeight);
 
-                    const handleHeight = Math.max(20 * this.scale, scrollbarTrackHeight * (contentAreaHeight / totalContentHeight));
+                    const handleHeight = Math.max(20 * this.scale, scrollbarTrackHeight * (contentHeight / totalContentHeight));
                     const scrollPercentage = this.state.battleLogScrollOffset / maxScroll;
                     const handleY = scrollbarTrackY + (1 - scrollPercentage) * (scrollbarTrackHeight - handleHeight);
 
@@ -601,18 +604,18 @@
 
                 // --- Draw Log Content (Clipped) ---
                 this.ctx.save();
-                const clipY = y + (30 * this.scale);
-                this.ctx.rect(x + 5, clipY, width - 5, height - (35 * this.scale));
+                this.ctx.beginPath();
+                this.ctx.rect(contentX - 5, contentY - 5, contentWidth + 10, contentHeight + 10);
                 this.ctx.clip();
 
-                let logY = y + height - bottomPadding + this.state.battleLogScrollOffset;
+                let logY = y + height - padding + this.state.battleLogScrollOffset;
                 const logsToDraw = this.state.battleLog.slice().reverse();
 
                 for (const [roundIndex, roundLog] of logsToDraw.entries()) {
                     // Draw log entries for the current round
                     for (let i = roundLog.length - 1; i >= 0; i--) {
                         const entry = roundLog[i];
-                        let currentX = x + (15 * this.scale);
+                        let currentX = contentX;
                         this.ctx.textAlign = 'left';
                         entry.forEach(part => {
                             this.ctx.fillStyle = part.color;
@@ -623,12 +626,13 @@
                         logY -= lineHeight;
                     }
 
+                    // Draw round header
                     const roundNumber = this.state.round - roundIndex;
                     if (roundNumber > 1) {
                         this.ctx.fillStyle = COLORS.accent;
                         this.ctx.font = `bold ${16 * this.scale}px 'Cinzel'`;
                         this.ctx.textAlign = 'center';
-                        this.ctx.fillText(`--- Round ${roundNumber - 1} ---`, x + width / 2, logY);
+                        this.ctx.fillText(`--- Round ${roundNumber - 1} ---`, contentX + contentWidth / 2, logY);
                         logY -= headerHeight;
                     }
                 }
