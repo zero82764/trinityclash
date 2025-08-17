@@ -160,6 +160,10 @@
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
                 this.buttonHitboxes = {};
                 this.mousePos = { x: 0, y: 0 };
+                this.heroImages = {};
+                this.imagesLoaded = false;
+                this.loadedImageCount = 0;
+                this.totalImages = HEROES.length + BOSSES.length;
 
                 this.state = this.getInitialState();
 
@@ -171,11 +175,46 @@
             // -----------------------------------
             init() {
                 this.resizeCanvas();
+                this.loadHeroImages();
                 window.addEventListener('resize', () => this.resizeCanvas());
                 this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
                 this.canvas.addEventListener('wheel', (e) => this.handleMouseWheel(e), { passive: false });
                 this.gameLoop();
+            }
+
+            loadHeroImages() {
+                console.log("Loading hero images...");
+                const allCharacters = [...HEROES, ...BOSSES];
+                this.totalImages = allCharacters.length;
+
+                if (this.totalImages === 0) {
+                    this.imagesLoaded = true;
+                    return;
+                }
+
+                allCharacters.forEach(hero => {
+                    const img = new Image();
+                    const imageName = hero.name.toLowerCase().replace(/, /g, '').replace(/ /g, '_');
+                    img.src = `images/${imageName}.png`;
+
+                    const onFinish = () => {
+                        this.loadedImageCount++;
+                        console.log(`Loaded image ${this.loadedImageCount}/${this.totalImages}: ${img.src}`);
+                        if (this.loadedImageCount === this.totalImages) {
+                            console.log("All images loaded.");
+                            this.imagesLoaded = true;
+                        }
+                    };
+
+                    img.onload = () => {
+                        this.heroImages[hero.id] = img;
+                        onFinish();
+                    };
+                    img.onerror = () => {
+                        onFinish();
+                    };
+                });
             }
 
             getInitialState() {
@@ -524,6 +563,14 @@
                 this.ctx.fillStyle = COLORS.background;
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+                if (!this.imagesLoaded) {
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(`Loading Assets... (${this.loadedImageCount}/${this.totalImages})`, this.canvas.width / 2, this.canvas.height / 2);
+                    return;
+                }
+
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
                 this.buttonHitboxes = {};
 
@@ -808,8 +855,17 @@
                 this.ctx.font = `bold ${24 * this.scale * customScale}px 'Cinzel'`;
                 this.ctx.fillText(hero.name, x + cardWidth / 2, y + padding + (10 * this.scale * customScale));
 
-                const iconSize = 30 * this.scale * customScale;
-                this.drawTypeIcon(hero.type, x + cardWidth / 2, y + padding + (45 * this.scale * customScale), iconSize);
+                // Draw Hero Image
+                const heroImage = this.heroImages[hero.id];
+                if (heroImage && heroImage.complete && heroImage.naturalHeight !== 0) {
+                    const imagePadding = 20 * this.scale * customScale;
+                    const imageWidth = cardWidth - imagePadding * 2;
+                    const imageHeight = imageWidth; // Maintain aspect ratio
+                    const imageX = x + imagePadding;
+                    const imageY = y + padding + (30 * this.scale * customScale);
+
+                    this.ctx.drawImage(heroImage, imageX, imageY, imageWidth, imageHeight);
+                }
 
                 const statY = y + cardHeight - padding - (55 * this.scale * customScale);
                 const iconStatSize = 24 * this.scale * customScale;
@@ -824,6 +880,12 @@
                 this.ctx.fillText(`${hero.abilityId === 'chaosBolt' ? '6-18' : currentAP}`, x + cardWidth - padding - iconStatSize - (5 * this.scale * customScale), statY + iconStatSize * 0.8);
 
                 this.ctx.textAlign = 'center';
+
+                // Draw Type Icon at bottom center
+                const iconSize = 25 * this.scale * customScale;
+                this.drawTypeIcon(hero.type, x + cardWidth / 2, statY + iconSize * 0.7, iconSize);
+
+
                 this.ctx.font = `italic ${14 * this.scale * customScale}px 'MedievalSharp'`;
 
                 let descriptionToDraw = hero.description;
@@ -831,7 +893,9 @@
                     descriptionToDraw = hero.detailedDescription || hero.description;
                 }
 
-                this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight / 2, cardWidth - padding * 1.5, 16 * this.scale * customScale);
+                // Adjust description position to be below the image area
+                this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight - (85 * this.scale * customScale), cardWidth - padding * 1.5, 15 * this.scale * customScale);
+
 
                 if (hero.statusEffects && hero.statusEffects.length > 0) {
                     const bleedEffect = hero.statusEffects.find(e => e.type === 'bleed');
