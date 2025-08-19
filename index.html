@@ -745,6 +745,7 @@
 
                 switch(this.state.gamePhase) {
                     case 'mainMenu': this.drawMainMenuScreen(); break;
+                    case 'campaignMap': this.drawCampaignMapScreen(); break;
                     case 'quickMatchSelection': this.drawQuickMatchSelectionScreen(); break;
                     case 'difficultySelection': this.drawDifficultySelectionScreen(); break;
                     case 'heroSelection': this.drawHeroSelectionScreen(); break;
@@ -1870,6 +1871,14 @@
                 this.drawButton('back', 'Back to Menu', {start: COLORS.might, end: COLORS.might});
             }
 
+            drawCampaignMapScreen() {
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${60 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Campaign Map', this.canvas.width / 2, this.canvas.height / 2);
+                this.drawBackButton(); // Also draw a back button to return to the main menu
+            }
+
             drawHeartIcon(x, y, width, height) {
                 this.ctx.save();
                 this.ctx.fillStyle = '#E53935';
@@ -2914,6 +2923,11 @@
             }
 
             handleMainMenuClick(mouseX, mouseY) {
+                const campaignBtn = this.buttonHitboxes.campaign;
+                if (campaignBtn && !campaignBtn.disabled && this.isClickInHitbox(mouseX, mouseY, campaignBtn)) {
+                    this.state.gamePhase = 'campaignMap';
+                    return;
+                }
                 const quickMatchBtn = this.buttonHitboxes.quickmatch;
                 if (quickMatchBtn && !quickMatchBtn.disabled && this.isClickInHitbox(mouseX, mouseY, quickMatchBtn)) {
                     this.state.gamePhase = 'quickMatchSelection';
