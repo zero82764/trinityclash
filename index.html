@@ -143,6 +143,93 @@
             { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
 
+        const TRAITS = ['Aggressive', 'Cautious', 'Pillager'];
+
+        const SLAYER_TITLES = {
+            Might: 'Giant-Slayer',
+            Finesse: 'Swift-Slayer',
+            Magic: 'Mage-Slayer'
+        };
+
+        const HUNTER_TRAITS = {
+            Might: 'Might-Hunter',
+            Finesse: 'Finesse-Hunter',
+            Magic: 'Magic-Hunter'
+        };
+
+        const BUILDING_COSTS = {
+            barracks: {
+                1: { gold: 50, stone: 25, dust: 0 },
+                2: { gold: 150, stone: 75, dust: 0 },
+                3: { gold: 300, stone: 150, dust: 25 }
+            },
+            thievesGuild: {
+                1: { gold: 75, stone: 0, dust: 10 },
+                2: { gold: 200, stone: 25, dust: 30 },
+                3: { gold: 400, stone: 75, dust: 60 }
+            },
+            wizardsTower: {
+                1: { gold: 25, stone: 50, dust: 20 },
+                2: { gold: 75, stone: 150, dust: 60 },
+                3: { gold: 150, stone: 300, dust: 120 }
+            }
+        };
+
+        const TERRITORIES = [
+            { territoryId: 1, name: 'Whispering Woods', resourceType: 'gold', resourceValue: 50, controllingRivalId: null },
+            { territoryId: 2, name: 'Stonefall Pass', resourceType: 'stone', resourceValue: 25, controllingRivalId: null },
+            { territoryId: 3, name: 'Dustbowl Oasis', resourceType: 'dust', resourceValue: 10, controllingRivalId: null }
+        ];
+
+        const CAMPAIGN_MAP_DATA = {
+            // We use percentages for x/y so it scales on different screen sizes
+            nodes: [
+                { id: 1, name: 'Your Citadel', x: 15, y: 50, type: 'citadel', owner: 'player' },
+                { id: 2, name: 'Whispering Woods', x: 25, y: 35, type: 'standard', resource: 'lumber' },
+                { id: 3, name: 'Stone Quarry', x: 28, y: 65, type: 'standard', resource: 'stone' },
+                { id: 4, name: 'The Twin Peaks', x: 40, y: 30, type: 'elite', resource: 'gold' },
+                { id: 5, name: 'The Sunken Fort', x: 45, y: 70, type: 'fortress', resource: 'gold' },
+                { id: 6, name: 'The Arcane Ruin', x: 55, y: 50, type: 'standard', resource: 'dust' }
+                // ... add more nodes as needed
+            ],
+            connections: [
+                [1, 2], // Path from Your Citadel to Whispering Woods
+                [1, 3], // Path from Your Citadel to Stone Quarry
+                [2, 4],
+                [3, 5],
+                [4, 6],
+                [5, 6]
+            ]
+        };
+
+        // ===================================
+        //  CAMPAIGN DATA STRUCTURES
+        // ===================================
+        class Rival {
+            constructor(baseHero, uniqueId, controlledTerritoryId, title = '', traits = [], history = []) {
+                // Copy all properties from the base hero
+                Object.assign(this, baseHero);
+
+                // Add additional Rival-specific properties
+                this.uniqueId = uniqueId;
+                this.title = title;
+                this.level = 1; // Starts at 1
+                this.traits = traits;
+                this.history = history;
+                this.controlledTerritoryId = controlledTerritoryId;
+            }
+        }
+
+        class Territory {
+            constructor(territoryId, name, resourceType, resourceValue, controllingRivalId) {
+                this.territoryId = territoryId;
+                this.name = name;
+                this.resourceType = resourceType;
+                this.resourceValue = resourceValue;
+                this.controllingRivalId = controllingRivalId;
+            }
+        }
+
         // ===================================
         //  ⚔️ 2. GAME CLASS
         // ===================================
@@ -158,6 +245,7 @@
                 this.baseCardHeight = 260;
 
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.campaignMapHitboxes = [];
                 this.buttonHitboxes = {};
                 this.mousePos = { x: 0, y: 0 };
                 this.heroImages = {};
@@ -243,12 +331,134 @@
                     confettiParticles: [],
                     bossActiveAbility: null,
                     nextUUID: 1, // Unique ID counter for hero instances
+                    isCampaignBattle: false,
+                    citadel: {
+                        resources: { gold: 100, stone: 50, dust: 20 },
+                        buildings: {
+                            barracks: { level: 1, name: 'Barracks' },
+                            thievesGuild: { level: 0, name: 'Thieves\' Guild' },
+                            wizardsTower: { level: 0, name: 'Wizard\'s Tower' }
+                        },
+                        unlockedHeroes: [],
+                        assignedHeroes: {}
+                    },
+                    campaignState: null, // This will hold the live campaign data
+                    hoveredNode: null // To track which map node the mouse is over
                 };
             }
 
             resetGame() {
                 this.state = this.getInitialState();
                 this.log([{ text: 'Welcome! Select a hero to begin.', color: COLORS.info }]);
+            }
+
+            upgradeBuilding(buildingName) {
+                const building = this.state.citadel.buildings[buildingName];
+                if (!building) {
+                    console.error(`Building ${buildingName} not found in citadel.`);
+                    return false;
+                }
+
+                const currentLevel = building.level;
+                const nextLevel = currentLevel + 1;
+                const costs = BUILDING_COSTS[buildingName];
+
+                if (!costs || !costs[nextLevel]) {
+                    this.log([{ text: `The ${building.name} is already at its maximum level!`, color: COLORS.info }]);
+                    return false;
+                }
+
+                const cost = costs[nextLevel];
+                const playerResources = this.state.citadel.resources;
+
+                // Check if player can afford the upgrade
+                for (const resource in cost) {
+                    if (playerResources[resource] < cost[resource]) {
+                        this.log([
+                            { text: 'Not enough resources to upgrade the ', color: COLORS.damage },
+                            { text: building.name, color: COLORS.accent },
+                            { text: '.', color: COLORS.damage }
+                        ]);
+                        return false;
+                    }
+                }
+
+                // Deduct resources
+                for (const resource in cost) {
+                    playerResources[resource] -= cost[resource];
+                }
+
+                // Upgrade building
+                building.level = nextLevel;
+
+                this.log([
+                    { text: `The ${building.name} has been upgraded to Level ${nextLevel}!`, color: COLORS.accent }
+                ]);
+
+                return true;
+            }
+
+            generateRival(heroId, territoryId) {
+                const baseHero = HEROES.find(h => h.id === heroId);
+                if (!baseHero) {
+                    console.error(`Hero with id ${heroId} not found.`);
+                    return null;
+                }
+
+                const randomTrait = TRAITS[Math.floor(Math.random() * TRAITS.length)];
+                const uniqueId = this.state.nextUUID++;
+
+                const newRival = new Rival(
+                    JSON.parse(JSON.stringify(baseHero)), // Use a deep copy of the hero
+                    uniqueId,
+                    territoryId,
+                    '',            // Default title
+                    [randomTrait]  // Trait list
+                );
+
+                return newRival;
+            }
+
+            handleRivalPromotion(rival, playerHeroDefeated) {
+                rival.level++;
+                rival.history.push(`Defeated ${playerHeroDefeated.name} and was promoted to Level ${rival.level}.`);
+
+                const defeatedHeroType = playerHeroDefeated.type;
+                const newTitle = SLAYER_TITLES[defeatedHeroType];
+                const newTrait = HUNTER_TRAITS[defeatedHeroType];
+
+                if (newTitle) {
+                    rival.title = newTitle;
+                }
+                if (newTrait && !rival.traits.includes(newTrait)) {
+                    rival.traits.push(newTrait);
+                }
+
+                this.log([
+                    { text: rival.name, color: COLORS[rival.type.toLowerCase()] },
+                    { text: ` has been promoted! They are now known as ${rival.name}, ${rival.title}.`, color: COLORS.accent }
+                ]);
+            }
+
+            collectTerritoryRewards(territory) {
+                if (!territory || !territory.resourceType || !territory.resourceValue) {
+                    console.error("Invalid territory data for collecting rewards.");
+                    return;
+                }
+
+                const { resourceType, resourceValue } = territory;
+                const playerResources = this.state.citadel.resources;
+
+                if (playerResources.hasOwnProperty(resourceType)) {
+                    playerResources[resourceType] += resourceValue;
+                    this.log([
+                        { text: `You collected `, color: COLORS.info },
+                        { text: `${resourceValue} ${resourceType}`, color: COLORS.accent },
+                        { text: ` from ${territory.name}!`, color: COLORS.info }
+                    ]);
+                } else {
+                    console.error(`Unknown resource type: ${resourceType}`);
+                }
             }
 
             initializeTeam(team, teamKey) {
@@ -472,6 +682,22 @@
                 this.log([{ text: 'Select one of your heroes to clash.', color: COLORS.info }]);
             }
 
+            startCampaign() {
+                // Create a deep copy of the map data to modify it live
+                this.state.campaignState = JSON.parse(JSON.stringify(CAMPAIGN_MAP_DATA));
+
+                // Let's generate some starting rivals for the territories
+                this.state.campaignState.nodes.forEach(node => {
+                    if (node.type !== 'citadel') {
+                        // Here you would call a function like generateRival()
+                        // For now, we'll just assign a placeholder owner
+                        node.owner = 'rival';
+                    }
+                });
+
+                this.state.gamePhase = 'campaignMap';
+            }
+
             // -----------------------------------
             //  Game Loop & Drawing
             // -----------------------------------
@@ -555,10 +781,12 @@
                 }
 
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.campaignMapHitboxes = [];
                 this.buttonHitboxes = {};
 
                 switch(this.state.gamePhase) {
                     case 'mainMenu': this.drawMainMenuScreen(); break;
+                    case 'campaignMap': this.drawCampaignMapScreen(); break;
                     case 'quickMatchSelection': this.drawQuickMatchSelectionScreen(); break;
                     case 'difficultySelection': this.drawDifficultySelectionScreen(); break;
                     case 'heroSelection': this.drawHeroSelectionScreen(); break;
@@ -1437,7 +1665,7 @@
                 this.ctx.shadowBlur = 0;
 
                 const menuItems = [
-                    { key: 'campaign', text: 'Campaign', disabled: true },
+                    { key: 'campaign', text: 'Campaign' },
                     { key: 'quickmatch', text: 'Quick Match' },
                     { key: 'heroviewer', text: 'Hero Viewer' },
                     { key: 'howtoplay', text: 'How to Play' }
@@ -1682,6 +1910,104 @@
                 const btnY = this.canvas.height - buttonHeight - 50 * this.scale;
                 this.buttonHitboxes.back = { x: btnX, y: btnY, width: buttonWidth, height: buttonHeight };
                 this.drawButton('back', 'Back to Menu', {start: COLORS.might, end: COLORS.might});
+            }
+
+            drawCampaignMapScreen() {
+                // For a better look, you would load a parchment image and draw it here
+                // For now, a simple color will do.
+                this.ctx.fillStyle = '#D2B48C'; // A parchment-like color
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (!this.state.campaignState) {
+                    // Maybe draw a loading message or return
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Loading Campaign...', this.canvas.width / 2, this.canvas.height / 2);
+                    this.drawBackButton();
+                    return;
+                }
+
+                // --- 1. Draw the Connections (Paths) ---
+                const nodes = this.state.campaignState.nodes;
+                this.ctx.strokeStyle = '#5D4037'; // Dark brown ink color
+                this.ctx.lineWidth = 3 * this.scale;
+                this.ctx.setLineDash([10 * this.scale, 5 * this.scale]); // Dashed lines
+
+                this.state.campaignState.connections.forEach(conn => {
+                    const node1 = nodes.find(n => n.id === conn[0]);
+                    const node2 = nodes.find(n => n.id === conn[1]);
+                    if (node1 && node2) {
+                        const x1 = (node1.x / 100) * this.canvas.width;
+                        const y1 = (node1.y / 100) * this.canvas.height;
+                        const x2 = (node2.x / 100) * this.canvas.width;
+                        const y2 = (node2.y / 100) * this.canvas.height;
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x1, y1);
+                        this.ctx.lineTo(x2, y2);
+                        this.ctx.stroke();
+                    }
+                });
+                this.ctx.setLineDash([]); // Reset to solid lines
+
+                // --- 2. Draw the Nodes (Territories) ---
+                const nodeRadius = 30 * this.scale;
+                nodes.forEach(node => {
+                    const x = (node.x / 100) * this.canvas.width;
+                    const y = (node.y / 100) * this.canvas.height;
+
+                    this.campaignMapHitboxes.push({ x: x - nodeRadius, y: y - nodeRadius, width: nodeRadius * 2, height: nodeRadius * 2, node });
+
+                    // Set color based on owner
+                    let nodeColor = '#9E9E9E'; // Neutral/Gray
+                    if (node.owner === 'player') nodeColor = COLORS.magic; // Player Blue
+                    else if (node.owner === 'rival') nodeColor = COLORS.might; // Rival Red
+
+                    // Draw main node circle
+                    this.ctx.fillStyle = nodeColor;
+                    this.ctx.strokeStyle = '#3E2723'; // Dark border
+                    this.ctx.lineWidth = 4 * this.scale;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+
+                    // --- 3. Handle Hover Effects ---
+                    if (this.state.hoveredNode && this.state.hoveredNode.id === node.id) {
+                        this.ctx.strokeStyle = COLORS.accent; // Gold highlight
+                        this.ctx.lineWidth = 5 * this.scale;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, nodeRadius + 5 * this.scale, 0, Math.PI * 2);
+                        this.ctx.stroke();
+
+                        // Display node name on hover
+                        this.ctx.fillStyle = COLORS.text;
+                        this.ctx.font = `bold ${24 * this.scale}px "Cinzel"`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.fillText(node.name, x, y - nodeRadius - (15 * this.scale));
+                    }
+
+                    // --- 4. Draw Node Icon (e.g., resource type) ---
+                    let icon = '';
+                    if (node.resource === 'gold') icon = '💰';
+                    if (node.resource === 'stone') icon = '🪨';
+                    if (node.resource === 'dust') icon = '✨';
+                    if (node.type === 'citadel') icon = '🏰';
+                    this.ctx.font = `${30 * this.scale}px "Cinzel"`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(icon, x, y);
+                    this.ctx.textBaseline = 'alphabetic'; // Reset baseline
+                });
+
+                // --- 5. Draw UI Overlays (e.g., Resource Counts) ---
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${32 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'left';
+                // Example: this.ctx.fillText(`Gold: ${this.state.citadel.resources.gold}`, 20 * this.scale, 50 * this.scale);
+
+                this.drawBackButton();
             }
 
             drawHeartIcon(x, y, width, height) {
@@ -2375,6 +2701,24 @@
                 if(finalP2Damage > 0) { this.dealDamage(p2, p1Target, finalP2Damage, 'attack'); }
                 if(finalP1Damage > 0) { this.dealDamage(p1, p2Target, finalP1Damage, 'attack'); }
 
+                // --- Post-Clash & Campaign Logic ---
+                const p2TargetDefeated = p2Target.hp <= 0;
+                const p1TargetDefeated = p1Target.hp <= 0;
+
+                if (this.state.isCampaignBattle) {
+                    if (p1TargetDefeated && p2.level) { // Rival wins clash
+                        this.handleRivalPromotion(p2, p1Target);
+                    } else if (p2TargetDefeated) { // Player wins clash
+                        const territoryId = p2.controlledTerritoryId;
+                        const territory = TERRITORIES.find(t => t.territoryId === territoryId);
+                        if (territory) {
+                            this.collectTerritoryRewards(territory);
+                        } else {
+                            console.error(`Could not find territory with ID: ${territoryId}`);
+                        }
+                    }
+                }
+
                 // Post-clash abilities
                 if (p1.abilityId === 'bleed' && finalP1Damage > 0 && p2Target.hp > 0) { this.applyBleed(p1, p2Target); }
                 if (p2.abilityId === 'bleed' && finalP2Damage > 0 && p1Target.hp > 0) { this.applyBleed(p2, p1Target); }
@@ -2658,6 +3002,7 @@
 
                 switch (this.state.gamePhase) {
                     case 'mainMenu': this.handleMainMenuClick(mouseX, mouseY); break;
+                    case 'campaignMap': this.handleCampaignMapClick(mouseX, mouseY); break;
                     case 'quickMatchSelection': this.handleQuickMatchSelectionClick(mouseX, mouseY); break;
                     case 'difficultySelection': this.handleDifficultySelectionClick(mouseX, mouseY); break;
                     case 'heroSelection': this.handleHeroSelectionClick(mouseX, mouseY); break;
@@ -2673,26 +3018,38 @@
                 const rect = this.canvas.getBoundingClientRect();
                 this.mousePos.x = event.clientX - rect.left;
                 this.mousePos.y = event.clientY - rect.top;
-                if (!['heroSelection', 'practiceSelection', 'playing', 'bossBattle'].includes(this.state.gamePhase)) {
-                    this.state.hoveredHero = null;
-                    return;
-                }
-                let foundHero = null;
-                const checkHitboxes = (hitboxes, team) => {
-                    for (const hitbox of hitboxes) {
+
+                // Reset hover states
+                this.state.hoveredHero = null;
+                this.state.hoveredNode = null;
+
+                if (['heroSelection', 'practiceSelection', 'playing', 'bossBattle'].includes(this.state.gamePhase)) {
+                    let foundHero = null;
+                    const checkHitboxes = (hitboxes, team) => {
+                        for (const hitbox of hitboxes) {
+                            if (this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox)) {
+                                foundHero = { ...hitbox, team };
+                                break;
+                            }
+                        }
+                    };
+                    if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
+                        checkHitboxes(this.cardHitboxes.selection, []);
+                    } else if (['playing', 'bossBattle'].includes(this.state.gamePhase)) {
+                        checkHitboxes(this.cardHitboxes.player1, this.state.player1Team);
+                        if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
+                    }
+                    this.state.hoveredHero = foundHero;
+                } else if (this.state.gamePhase === 'campaignMap') {
+                    let foundNode = null;
+                    for (const hitbox of this.campaignMapHitboxes) {
                         if (this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox)) {
-                            foundHero = { ...hitbox, team };
+                            foundNode = hitbox.node;
                             break;
                         }
                     }
-                };
-                if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
-                    checkHitboxes(this.cardHitboxes.selection, []);
-                } else if (['playing', 'bossBattle'].includes(this.state.gamePhase)) {
-                    checkHitboxes(this.cardHitboxes.player1, this.state.player1Team);
-                    if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
+                    this.state.hoveredNode = foundNode;
                 }
-                this.state.hoveredHero = foundHero;
             }
 
             handleMouseWheel(event) {
@@ -2710,6 +3067,11 @@
             }
 
             handleMainMenuClick(mouseX, mouseY) {
+                const campaignBtn = this.buttonHitboxes.campaign;
+                if (campaignBtn && !campaignBtn.disabled && this.isClickInHitbox(mouseX, mouseY, campaignBtn)) {
+                    this.startCampaign();
+                    return;
+                }
                 const quickMatchBtn = this.buttonHitboxes.quickmatch;
                 if (quickMatchBtn && !quickMatchBtn.disabled && this.isClickInHitbox(mouseX, mouseY, quickMatchBtn)) {
                     this.state.gamePhase = 'quickMatchSelection';
@@ -2832,6 +3194,23 @@
             handleGameOverClick(mouseX, mouseY) {
                 const btn = this.buttonHitboxes.playAgain;
                 if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) this.resetGame();
+            }
+
+            handleCampaignMapClick(mouseX, mouseY) {
+                for (const hitbox of this.campaignMapHitboxes) {
+                    if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
+                        const node = hitbox.node;
+                        if (node.owner === 'rival') {
+                            // This is where you would trigger the battle
+                            alert(`You clicked on rival territory: ${node.name}! Prepare for battle!`);
+                        } else if (node.owner === 'player') {
+                            alert(`This is your citadel.`);
+                        } else {
+                            alert(`This is neutral territory: ${node.name}.`);
+                        }
+                        return; // Exit after handling the first clicked node
+                    }
+                }
             }
 
             isClickInHitbox(mouseX, mouseY, hitbox) {

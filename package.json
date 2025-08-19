@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "start": "./node_modules/.bin/serve -l 8000"
+  },
   "dependencies": {
     "@playwright/test": "^1.54.2"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
   }
 }
