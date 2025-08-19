@@ -143,6 +143,24 @@
             { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
 
+        const BUILDING_COSTS = {
+            barracks: {
+                1: { gold: 50, stone: 25, dust: 0 },
+                2: { gold: 150, stone: 75, dust: 0 },
+                3: { gold: 300, stone: 150, dust: 25 }
+            },
+            thievesGuild: {
+                1: { gold: 75, stone: 0, dust: 10 },
+                2: { gold: 200, stone: 25, dust: 30 },
+                3: { gold: 400, stone: 75, dust: 60 }
+            },
+            wizardsTower: {
+                1: { gold: 25, stone: 50, dust: 20 },
+                2: { gold: 75, stone: 150, dust: 60 },
+                3: { gold: 150, stone: 300, dust: 120 }
+            }
+        };
+
         // ===================================
         //  CAMPAIGN DATA STRUCTURES
         // ===================================
@@ -271,12 +289,68 @@
                     confettiParticles: [],
                     bossActiveAbility: null,
                     nextUUID: 1, // Unique ID counter for hero instances
+                    citadel: {
+                        resources: { gold: 100, stone: 50, dust: 20 },
+                        buildings: {
+                            barracks: { level: 1, name: 'Barracks' },
+                            thievesGuild: { level: 0, name: 'Thieves\' Guild' },
+                            wizardsTower: { level: 0, name: 'Wizard\'s Tower' }
+                        },
+                        unlockedHeroes: [],
+                        assignedHeroes: {}
+                    },
                 };
             }
 
             resetGame() {
                 this.state = this.getInitialState();
                 this.log([{ text: 'Welcome! Select a hero to begin.', color: COLORS.info }]);
+            }
+
+            upgradeBuilding(buildingName) {
+                const building = this.state.citadel.buildings[buildingName];
+                if (!building) {
+                    console.error(`Building ${buildingName} not found in citadel.`);
+                    return false;
+                }
+
+                const currentLevel = building.level;
+                const nextLevel = currentLevel + 1;
+                const costs = BUILDING_COSTS[buildingName];
+
+                if (!costs || !costs[nextLevel]) {
+                    this.log([{ text: `The ${building.name} is already at its maximum level!`, color: COLORS.info }]);
+                    return false;
+                }
+
+                const cost = costs[nextLevel];
+                const playerResources = this.state.citadel.resources;
+
+                // Check if player can afford the upgrade
+                for (const resource in cost) {
+                    if (playerResources[resource] < cost[resource]) {
+                        this.log([
+                            { text: 'Not enough resources to upgrade the ', color: COLORS.damage },
+                            { text: building.name, color: COLORS.accent },
+                            { text: '.', color: COLORS.damage }
+                        ]);
+                        return false;
+                    }
+                }
+
+                // Deduct resources
+                for (const resource in cost) {
+                    playerResources[resource] -= cost[resource];
+                }
+
+                // Upgrade building
+                building.level = nextLevel;
+
+                this.log([
+                    { text: `The ${building.name} has been upgraded to Level ${nextLevel}!`, color: COLORS.accent }
+                ]);
+
+                return true;
             }
 
             initializeTeam(team, teamKey) {
