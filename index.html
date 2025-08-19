@@ -681,6 +681,22 @@
                 this.log([{ text: 'Select one of your heroes to clash.', color: COLORS.info }]);
             }
 
+            startCampaign() {
+                // Create a deep copy of the map data to modify it live
+                this.state.campaignState = JSON.parse(JSON.stringify(CAMPAIGN_MAP_DATA));
+
+                // Let's generate some starting rivals for the territories
+                this.state.campaignState.nodes.forEach(node => {
+                    if (node.type !== 'citadel') {
+                        // Here you would call a function like generateRival()
+                        // For now, we'll just assign a placeholder owner
+                        node.owner = 'rival';
+                    }
+                });
+
+                this.state.gamePhase = 'campaignMap';
+            }
+
             // -----------------------------------
             //  Game Loop & Drawing
             // -----------------------------------
@@ -3002,7 +3018,7 @@
             handleMainMenuClick(mouseX, mouseY) {
                 const campaignBtn = this.buttonHitboxes.campaign;
                 if (campaignBtn && !campaignBtn.disabled && this.isClickInHitbox(mouseX, mouseY, campaignBtn)) {
-                    this.state.gamePhase = 'campaignMap';
+                    this.startCampaign();
                     return;
                 }
                 const quickMatchBtn = this.buttonHitboxes.quickmatch;
