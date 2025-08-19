@@ -144,6 +144,34 @@
         ];
 
         // ===================================
+        //  CAMPAIGN DATA STRUCTURES
+        // ===================================
+        class Rival {
+            constructor(baseHero, uniqueId, controlledTerritoryId, title = '', traits = [], history = []) {
+                // Copy all properties from the base hero
+                Object.assign(this, baseHero);
+
+                // Add additional Rival-specific properties
+                this.uniqueId = uniqueId;
+                this.title = title;
+                this.level = 1; // Starts at 1
+                this.traits = traits;
+                this.history = history;
+                this.controlledTerritoryId = controlledTerritoryId;
+            }
+        }
+
+        class Territory {
+            constructor(territoryId, name, resourceType, resourceValue, controllingRivalId) {
+                this.territoryId = territoryId;
+                this.name = name;
+                this.resourceType = resourceType;
+                this.resourceValue = resourceValue;
+                this.controllingRivalId = controllingRivalId;
+            }
+        }
+
+        // ===================================
         //  ⚔️ 2. GAME CLASS
         // ===================================
         class Game {
