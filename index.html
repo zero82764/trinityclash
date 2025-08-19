@@ -3002,6 +3002,7 @@
 
                 switch (this.state.gamePhase) {
                     case 'mainMenu': this.handleMainMenuClick(mouseX, mouseY); break;
+                    case 'campaignMap': this.handleCampaignMapClick(mouseX, mouseY); break;
                     case 'quickMatchSelection': this.handleQuickMatchSelectionClick(mouseX, mouseY); break;
                     case 'difficultySelection': this.handleDifficultySelectionClick(mouseX, mouseY); break;
                     case 'heroSelection': this.handleHeroSelectionClick(mouseX, mouseY); break;
@@ -3017,26 +3018,38 @@
                 const rect = this.canvas.getBoundingClientRect();
                 this.mousePos.x = event.clientX - rect.left;
                 this.mousePos.y = event.clientY - rect.top;
-                if (!['heroSelection', 'practiceSelection', 'playing', 'bossBattle'].includes(this.state.gamePhase)) {
-                    this.state.hoveredHero = null;
-                    return;
-                }
-                let foundHero = null;
-                const checkHitboxes = (hitboxes, team) => {
-                    for (const hitbox of hitboxes) {
+
+                // Reset hover states
+                this.state.hoveredHero = null;
+                this.state.hoveredNode = null;
+
+                if (['heroSelection', 'practiceSelection', 'playing', 'bossBattle'].includes(this.state.gamePhase)) {
+                    let foundHero = null;
+                    const checkHitboxes = (hitboxes, team) => {
+                        for (const hitbox of hitboxes) {
+                            if (this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox)) {
+                                foundHero = { ...hitbox, team };
+                                break;
+                            }
+                        }
+                    };
+                    if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
+                        checkHitboxes(this.cardHitboxes.selection, []);
+                    } else if (['playing', 'bossBattle'].includes(this.state.gamePhase)) {
+                        checkHitboxes(this.cardHitboxes.player1, this.state.player1Team);
+                        if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
+                    }
+                    this.state.hoveredHero = foundHero;
+                } else if (this.state.gamePhase === 'campaignMap') {
+                    let foundNode = null;
+                    for (const hitbox of this.campaignMapHitboxes) {
                         if (this.isClickInHitbox(this.mousePos.x, this.mousePos.y, hitbox)) {
-                            foundHero = { ...hitbox, team };
+                            foundNode = hitbox.node;
                             break;
                         }
                     }
-                };
-                if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
-                    checkHitboxes(this.cardHitboxes.selection, []);
-                } else if (['playing', 'bossBattle'].includes(this.state.gamePhase)) {
-                    checkHitboxes(this.cardHitboxes.player1, this.state.player1Team);
-                    if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
+                    this.state.hoveredNode = foundNode;
                 }
-                this.state.hoveredHero = foundHero;
             }
 
             handleMouseWheel(event) {
@@ -3181,6 +3194,23 @@
             handleGameOverClick(mouseX, mouseY) {
                 const btn = this.buttonHitboxes.playAgain;
                 if (btn && this.isClickInHitbox(mouseX, mouseY, btn)) this.resetGame();
+            }
+
+            handleCampaignMapClick(mouseX, mouseY) {
+                for (const hitbox of this.campaignMapHitboxes) {
+                    if (this.isClickInHitbox(mouseX, mouseY, hitbox)) {
+                        const node = hitbox.node;
+                        if (node.owner === 'rival') {
+                            // This is where you would trigger the battle
+                            alert(`You clicked on rival territory: ${node.name}! Prepare for battle!`);
+                        } else if (node.owner === 'player') {
+                            alert(`This is your citadel.`);
+                        } else {
+                            alert(`This is neutral territory: ${node.name}.`);
+                        }
+                        return; // Exit after handling the first clicked node
+                    }
+                }
             }
 
             isClickInHitbox(mouseX, mouseY, hitbox) {
