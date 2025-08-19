@@ -245,6 +245,7 @@
                 this.baseCardHeight = 260;
 
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.campaignMapHitboxes = [];
                 this.buttonHitboxes = {};
                 this.mousePos = { x: 0, y: 0 };
                 this.heroImages = {};
@@ -780,6 +781,7 @@
                 }
 
                 this.cardHitboxes = { player1: [], player2: [], selection: [] };
+                this.campaignMapHitboxes = [];
                 this.buttonHitboxes = {};
 
                 switch(this.state.gamePhase) {
@@ -1911,63 +1913,99 @@
             }
 
             drawCampaignMapScreen() {
-                this.ctx.fillStyle = COLORS.text;
-                this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText('Campaign Map', this.canvas.width / 2, 80 * this.scale);
+                // For a better look, you would load a parchment image and draw it here
+                // For now, a simple color will do.
+                this.ctx.fillStyle = '#D2B48C'; // A parchment-like color
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-                const { nodes, connections } = CAMPAIGN_MAP_DATA;
-                const nodeMap = new Map(nodes.map(node => [node.id, node]));
+                if (!this.state.campaignState) {
+                    // Maybe draw a loading message or return
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${48 * this.scale}px "Cinzel"`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Loading Campaign...', this.canvas.width / 2, this.canvas.height / 2);
+                    this.drawBackButton();
+                    return;
+                }
 
-                // 1. Draw connections
-                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                this.ctx.lineWidth = 4 * this.scale;
-                connections.forEach(conn => {
-                    const node1 = nodeMap.get(conn[0]);
-                    const node2 = nodeMap.get(conn[1]);
+                // --- 1. Draw the Connections (Paths) ---
+                const nodes = this.state.campaignState.nodes;
+                this.ctx.strokeStyle = '#5D4037'; // Dark brown ink color
+                this.ctx.lineWidth = 3 * this.scale;
+                this.ctx.setLineDash([10 * this.scale, 5 * this.scale]); // Dashed lines
+
+                this.state.campaignState.connections.forEach(conn => {
+                    const node1 = nodes.find(n => n.id === conn[0]);
+                    const node2 = nodes.find(n => n.id === conn[1]);
                     if (node1 && node2) {
-                        const x1 = node1.x / 100 * this.canvas.width;
-                        const y1 = node1.y / 100 * this.canvas.height;
-                        const x2 = node2.x / 100 * this.canvas.width;
-                        const y2 = node2.y / 100 * this.canvas.height;
+                        const x1 = (node1.x / 100) * this.canvas.width;
+                        const y1 = (node1.y / 100) * this.canvas.height;
+                        const x2 = (node2.x / 100) * this.canvas.width;
+                        const y2 = (node2.y / 100) * this.canvas.height;
+
                         this.ctx.beginPath();
                         this.ctx.moveTo(x1, y1);
                         this.ctx.lineTo(x2, y2);
                         this.ctx.stroke();
                     }
                 });
+                this.ctx.setLineDash([]); // Reset to solid lines
 
-                // 2. Draw nodes
+                // --- 2. Draw the Nodes (Territories) ---
+                const nodeRadius = 30 * this.scale;
                 nodes.forEach(node => {
-                    const x = node.x / 100 * this.canvas.width;
-                    const y = node.y / 100 * this.canvas.height;
-                    const radius = 20 * this.scale;
+                    const x = (node.x / 100) * this.canvas.width;
+                    const y = (node.y / 100) * this.canvas.height;
 
-                    // Set color based on type/owner
-                    if (node.type === 'citadel') {
-                        this.ctx.fillStyle = COLORS.accent;
-                    } else if (node.owner === 'rival') {
-                        this.ctx.fillStyle = COLORS.might;
-                    } else {
-                        this.ctx.fillStyle = '#888'; // Uncontrolled
-                    }
+                    this.campaignMapHitboxes.push({ x: x - nodeRadius, y: y - nodeRadius, width: nodeRadius * 2, height: nodeRadius * 2, node });
 
+                    // Set color based on owner
+                    let nodeColor = '#9E9E9E'; // Neutral/Gray
+                    if (node.owner === 'player') nodeColor = COLORS.magic; // Player Blue
+                    else if (node.owner === 'rival') nodeColor = COLORS.might; // Rival Red
+
+                    // Draw main node circle
+                    this.ctx.fillStyle = nodeColor;
+                    this.ctx.strokeStyle = '#3E2723'; // Dark border
+                    this.ctx.lineWidth = 4 * this.scale;
                     this.ctx.beginPath();
-                    this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    this.ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
                     this.ctx.fill();
-
-                    // Add a border
-                    this.ctx.strokeStyle = COLORS.cardBorder;
-                    this.ctx.lineWidth = 3 * this.scale;
                     this.ctx.stroke();
 
-                    // 3. Draw node names
-                    this.ctx.fillStyle = COLORS.text;
-                    this.ctx.font = `bold ${18 * this.scale}px "MedievalSharp"`;
+                    // --- 3. Handle Hover Effects ---
+                    if (this.state.hoveredNode && this.state.hoveredNode.id === node.id) {
+                        this.ctx.strokeStyle = COLORS.accent; // Gold highlight
+                        this.ctx.lineWidth = 5 * this.scale;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, nodeRadius + 5 * this.scale, 0, Math.PI * 2);
+                        this.ctx.stroke();
+
+                        // Display node name on hover
+                        this.ctx.fillStyle = COLORS.text;
+                        this.ctx.font = `bold ${24 * this.scale}px "Cinzel"`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.fillText(node.name, x, y - nodeRadius - (15 * this.scale));
+                    }
+
+                    // --- 4. Draw Node Icon (e.g., resource type) ---
+                    let icon = '';
+                    if (node.resource === 'gold') icon = '💰';
+                    if (node.resource === 'stone') icon = '🪨';
+                    if (node.resource === 'dust') icon = '✨';
+                    if (node.type === 'citadel') icon = '🏰';
+                    this.ctx.font = `${30 * this.scale}px "Cinzel"`;
                     this.ctx.textAlign = 'center';
-                    this.ctx.fillText(node.name, x, y + radius + (20 * this.scale));
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(icon, x, y);
+                    this.ctx.textBaseline = 'alphabetic'; // Reset baseline
                 });
 
+                // --- 5. Draw UI Overlays (e.g., Resource Counts) ---
+                this.ctx.fillStyle = COLORS.text;
+                this.ctx.font = `bold ${32 * this.scale}px "Cinzel"`;
+                this.ctx.textAlign = 'left';
+                // Example: this.ctx.fillText(`Gold: ${this.state.citadel.resources.gold}`, 20 * this.scale, 50 * this.scale);
 
                 this.drawBackButton();
             }
