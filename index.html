@@ -143,6 +143,8 @@
             { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
 
+        const TRAITS = ['Aggressive', 'Cautious', 'Pillager'];
+
         const BUILDING_COSTS = {
             barracks: {
                 1: { gold: 50, stone: 25, dust: 0 },
@@ -351,6 +353,27 @@
                 ]);
 
                 return true;
+            }
+
+            generateRival(heroId, territoryId) {
+                const baseHero = HEROES.find(h => h.id === heroId);
+                if (!baseHero) {
+                    console.error(`Hero with id ${heroId} not found.`);
+                    return null;
+                }
+
+                const randomTrait = TRAITS[Math.floor(Math.random() * TRAITS.length)];
+                const uniqueId = this.state.nextUUID++;
+
+                const newRival = new Rival(
+                    JSON.parse(JSON.stringify(baseHero)), // Use a deep copy of the hero
+                    uniqueId,
+                    territoryId,
+                    '',            // Default title
+                    [randomTrait]  // Trait list
+                );
+
+                return newRival;
             }
 
             initializeTeam(team, teamKey) {
