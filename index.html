@@ -145,6 +145,18 @@
 
         const TRAITS = ['Aggressive', 'Cautious', 'Pillager'];
 
+        const SLAYER_TITLES = {
+            Might: 'Giant-Slayer',
+            Finesse: 'Swift-Slayer',
+            Magic: 'Mage-Slayer'
+        };
+
+        const HUNTER_TRAITS = {
+            Might: 'Might-Hunter',
+            Finesse: 'Finesse-Hunter',
+            Magic: 'Magic-Hunter'
+        };
+
         const BUILDING_COSTS = {
             barracks: {
                 1: { gold: 50, stone: 25, dust: 0 },
@@ -374,6 +386,27 @@
                 );
 
                 return newRival;
+            }
+
+            handleRivalPromotion(rival, playerHeroDefeated) {
+                rival.level++;
+                rival.history.push(`Defeated ${playerHeroDefeated.name} and was promoted to Level ${rival.level}.`);
+
+                const defeatedHeroType = playerHeroDefeated.type;
+                const newTitle = SLAYER_TITLES[defeatedHeroType];
+                const newTrait = HUNTER_TRAITS[defeatedHeroType];
+
+                if (newTitle) {
+                    rival.title = newTitle;
+                }
+                if (newTrait && !rival.traits.includes(newTrait)) {
+                    rival.traits.push(newTrait);
+                }
+
+                this.log([
+                    { text: rival.name, color: COLORS[rival.type.toLowerCase()] },
+                    { text: ` has been promoted! They are now known as ${rival.name}, ${rival.title}.`, color: COLORS.accent }
+                ]);
             }
 
             initializeTeam(team, teamKey) {
