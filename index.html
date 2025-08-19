@@ -175,6 +175,12 @@
             }
         };
 
+        const TERRITORIES = [
+            { territoryId: 1, name: 'Whispering Woods', resourceType: 'gold', resourceValue: 50, controllingRivalId: null },
+            { territoryId: 2, name: 'Stonefall Pass', resourceType: 'stone', resourceValue: 25, controllingRivalId: null },
+            { territoryId: 3, name: 'Dustbowl Oasis', resourceType: 'dust', resourceValue: 10, controllingRivalId: null }
+        ];
+
         // ===================================
         //  CAMPAIGN DATA STRUCTURES
         // ===================================
@@ -303,6 +309,7 @@
                     confettiParticles: [],
                     bossActiveAbility: null,
                     nextUUID: 1, // Unique ID counter for hero instances
+                    isCampaignBattle: false,
                     citadel: {
                         resources: { gold: 100, stone: 50, dust: 20 },
                         buildings: {
@@ -407,6 +414,27 @@
                     { text: rival.name, color: COLORS[rival.type.toLowerCase()] },
                     { text: ` has been promoted! They are now known as ${rival.name}, ${rival.title}.`, color: COLORS.accent }
                 ]);
+            }
+
+            collectTerritoryRewards(territory) {
+                if (!territory || !territory.resourceType || !territory.resourceValue) {
+                    console.error("Invalid territory data for collecting rewards.");
+                    return;
+                }
+
+                const { resourceType, resourceValue } = territory;
+                const playerResources = this.state.citadel.resources;
+
+                if (playerResources.hasOwnProperty(resourceType)) {
+                    playerResources[resourceType] += resourceValue;
+                    this.log([
+                        { text: `You collected `, color: COLORS.info },
+                        { text: `${resourceValue} ${resourceType}`, color: COLORS.accent },
+                        { text: ` from ${territory.name}!`, color: COLORS.info }
+                    ]);
+                } else {
+                    console.error(`Unknown resource type: ${resourceType}`);
+                }
             }
 
             initializeTeam(team, teamKey) {
@@ -2532,6 +2560,24 @@
 
                 if(finalP2Damage > 0) { this.dealDamage(p2, p1Target, finalP2Damage, 'attack'); }
                 if(finalP1Damage > 0) { this.dealDamage(p1, p2Target, finalP1Damage, 'attack'); }
+
+                // --- Post-Clash & Campaign Logic ---
+                const p2TargetDefeated = p2Target.hp <= 0;
+                const p1TargetDefeated = p1Target.hp <= 0;
+
+                if (this.state.isCampaignBattle) {
+                    if (p1TargetDefeated && p2.level) { // Rival wins clash
+                        this.handleRivalPromotion(p2, p1Target);
+                    } else if (p2TargetDefeated) { // Player wins clash
+                        const territoryId = p2.controlledTerritoryId;
+                        const territory = TERRITORIES.find(t => t.territoryId === territoryId);
+                        if (territory) {
+                            this.collectTerritoryRewards(territory);
+                        } else {
+                            console.error(`Could not find territory with ID: ${territoryId}`);
+                        }
+                    }
+                }
 
                 // Post-clash abilities
                 if (p1.abilityId === 'bleed' && finalP1Damage > 0 && p2Target.hp > 0) { this.applyBleed(p1, p2Target); }
