@@ -263,9 +263,12 @@
                 this.buttonHitboxes = {};
                 this.mousePos = { x: 0, y: 0 };
                 this.heroImages = {};
+                this.logoImage = null;
                 this.imagesLoaded = false;
                 this.loadedImageCount = 0;
-                this.totalImages = HEROES.length + BOSSES.length;
+                // All heroes, all bosses, and one logo
+                this.totalImages = HEROES.length + BOSSES.length + 1;
+
 
                 this.state = this.getInitialState();
 
@@ -277,7 +280,7 @@
             // -----------------------------------
             init() {
                 this.resizeCanvas();
-                this.loadHeroImages();
+                this.loadAssets();
                 window.addEventListener('resize', () => this.resizeCanvas());
                 this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
                 this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
@@ -285,12 +288,35 @@
                 this.gameLoop();
             }
 
-            loadHeroImages() {
-                console.log("Loading hero images...");
-                const allCharacters = [...HEROES, ...BOSSES];
-                this.totalImages = allCharacters.length;
+            loadAssets() {
+                console.log("Loading assets...");
 
-                if (this.totalImages === 0) {
+                const onFinish = (name) => {
+                    this.loadedImageCount++;
+                    console.log(`Loaded asset ${this.loadedImageCount}/${this.totalImages}: ${name}`);
+                    if (this.loadedImageCount === this.totalImages) {
+                        console.log("All assets loaded.");
+                        this.imagesLoaded = true;
+                    }
+                };
+
+                // Load Logo
+                const logoImg = new Image();
+                logoImg.crossOrigin = "Anonymous"; // Needed for cross-domain images on canvas
+                logoImg.src = 'https://i.imgur.com/DhR6stR.png';
+                logoImg.onload = () => {
+                    this.logoImage = logoImg;
+                    onFinish('logo');
+                };
+                logoImg.onerror = () => {
+                    console.error("Failed to load logo image.");
+                    onFinish('logo'); // Still count it as "finished" to not stall the loading screen
+                };
+
+
+                // Load Hero Images
+                const allCharacters = [...HEROES, ...BOSSES];
+                if (allCharacters.length === 0 && this.totalImages === 1) { // Only logo to load
                     this.imagesLoaded = true;
                     return;
                 }
@@ -300,21 +326,13 @@
                     const imageName = hero.name.toLowerCase().replace(/,/g, '').replace(/ /g, '_');
                     img.src = `images/${imageName}.png`;
 
-                    const onFinish = () => {
-                        this.loadedImageCount++;
-                        console.log(`Loaded image ${this.loadedImageCount}/${this.totalImages}: ${img.src}`);
-                        if (this.loadedImageCount === this.totalImages) {
-                            console.log("All images loaded.");
-                            this.imagesLoaded = true;
-                        }
-                    };
-
                     img.onload = () => {
                         this.heroImages[hero.id] = img;
-                        onFinish();
+                        onFinish(hero.name);
                     };
                     img.onerror = () => {
-                        onFinish();
+                        // Don't assign a broken image, just mark as loaded
+                        onFinish(hero.name);
                     };
                 });
             }
@@ -1657,62 +1675,22 @@
                 this.drawButton('playAgain', 'Main Menu', COLORS.button);
             }
 
-            drawTitleSwordIcon(x, y, width, height) {
-                this.ctx.save();
-                this.ctx.strokeStyle = COLORS.buttonBorder;
-                this.ctx.lineWidth = 3 * this.scale;
-                const pommelRadius = (width * 0.4) / 2;
-                this.ctx.fillStyle = COLORS.might;
-                this.ctx.beginPath();
-                this.ctx.arc(x + width / 2, y + pommelRadius, pommelRadius, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.stroke();
-                const hiltWidth = width * 0.4;
-                const hiltHeight = height * 0.2;
-                const hiltY = y + pommelRadius * 2;
-                this.ctx.fillRect(x + (width - hiltWidth) / 2, hiltY, hiltWidth, hiltHeight);
-                this.ctx.strokeRect(x + (width - hiltWidth) / 2, hiltY, hiltWidth, hiltHeight);
-                const guardHeight = height * 0.1;
-                const guardY = hiltY + hiltHeight;
-                this.ctx.fillStyle = COLORS.accent;
-                this.ctx.fillRect(x, guardY, width, guardHeight);
-                this.ctx.strokeRect(x, guardY, width, guardHeight);
-                const bladeWidth = width * 0.4;
-                const bladeHeight = height * 0.65;
-                const bladeY = guardY + guardHeight;
-                this.ctx.fillStyle = '#BDBDBD';
-                this.ctx.fillRect(x + (width - bladeWidth) / 2, bladeY, bladeWidth, bladeHeight);
-                this.ctx.strokeRect(x + (width - bladeWidth) / 2, bladeY, bladeWidth, bladeHeight);
-                const tipY = bladeY + bladeHeight;
-                this.ctx.beginPath();
-                this.ctx.moveTo(x + (width - bladeWidth) / 2, tipY);
-                this.ctx.lineTo(x + width / 2, tipY + height * 0.1);
-                this.ctx.lineTo(x + (width + bladeWidth) / 2, tipY);
-                this.ctx.closePath();
-                this.ctx.fill();
-                this.ctx.stroke();
-                this.ctx.restore();
-            }
-
             drawMainMenuScreen() {
-                this.ctx.fillStyle = COLORS.text;
-                this.ctx.font = `bold ${80 * this.scale}px "Cinzel"`;
-                this.ctx.shadowColor = 'black';
-                this.ctx.shadowBlur = 10;
-                const titleY = this.canvas.height / 2 - 250 * this.scale;
-                const remainingText = 'rinity Clash';
-                const textMetrics = this.ctx.measureText(remainingText);
-                const swordWidth = 60 * this.scale;
-                const swordHeight = 80 * this.scale;
-                const totalTitleWidth = swordWidth + textMetrics.width;
-                const startX = (this.canvas.width - totalTitleWidth) / 2;
-                const swordY = titleY - swordHeight;
-                this.drawTitleSwordIcon(startX, swordY, swordWidth, swordHeight);
-                this.ctx.textAlign = 'left';
-                this.ctx.textBaseline = 'alphabetic';
-                this.ctx.fillText(remainingText, startX + swordWidth, titleY);
-                this.ctx.textAlign = 'center';
-                this.ctx.shadowBlur = 0;
+                // Draw the logo if it's loaded
+                if (this.logoImage) {
+                    const logoHeight = 200 * this.scale;
+                    const logoWidth = (this.logoImage.width / this.logoImage.height) * logoHeight;
+                    const x = (this.canvas.width - logoWidth) / 2;
+                    // Position the logo above the center
+                    const y = this.canvas.height / 2 - logoHeight - (120 * this.scale);
+                    this.ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
+                } else {
+                    // Fallback to original text title if logo fails to load
+                    this.ctx.fillStyle = COLORS.text;
+                    this.ctx.font = `bold ${80 * this.scale}px "Cinzel"`;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText('Trinity Clash', this.canvas.width / 2, this.canvas.height / 2 - 200 * this.scale);
+                }
 
                 const menuItems = [
                     { key: 'campaign', text: 'Campaign' },
@@ -1725,7 +1703,8 @@
                 const buttonHeight = 80 * this.scale;
                 const spacing = 25 * this.scale;
                 const totalHeight = menuItems.length * buttonHeight + (menuItems.length - 1) * spacing;
-                const menuStartY = this.canvas.height / 2 - totalHeight / 2 + 50 * this.scale;
+                // Adjusted menu start Y to give the logo more space
+                const menuStartY = this.canvas.height / 2 - totalHeight / 2 + 80 * this.scale;
 
                 menuItems.forEach((item, index) => {
                     const x = (this.canvas.width - buttonWidth) / 2;
