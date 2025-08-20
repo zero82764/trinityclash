@@ -143,19 +143,6 @@
             { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
 
-        const PLAYBOOKS = [
-            {
-                name: 'Fireball Stall',
-                description: 'A defensive strategy designed to survive until Round 5, then win with a massive Fireball.',
-                teamSize: 5, // This playbook is designed for 5v5
-                coreHeroId: 8, // Master Theron (Fireball)
-                roles: {
-                    'tank': { count: 2, heroes: [6, 0, 23] }, // Boro, Sir Reginald, Goblin Brute
-                    'dodger': { count: 2, heroes: [7, 21, 2] } // Lyra, Goblin Scout, Vex
-                }
-            }
-        ];
-
         const TRAITS = ['Aggressive', 'Cautious', 'Pillager'];
 
         const SLAYER_TITLES = {
@@ -241,6 +228,20 @@
                 this.resourceValue = resourceValue;
                 this.controllingRivalId = controllingRivalId;
             }
+        }
+
+        // ===================================
+        //  HELPER FUNCTIONS
+        // ===================================
+        function arraysEqual(a, b) {
+            if (a === b) return true;
+            if (a == null || b == null) return false;
+            if (a.length !== b.length) return false;
+
+            for (let i = 0; i < a.length; ++i) {
+                if (a[i] !== b[i]) return false;
+            }
+            return true;
         }
 
         // ===================================
@@ -345,6 +346,7 @@
                     bossActiveAbility: null,
                     nextUUID: 1, // Unique ID counter for hero instances
                     isCampaignBattle: false,
+                    vengeanceMode: false,
                     citadel: {
                         resources: { gold: 100, stone: 50, dust: 20 },
                         buildings: {
@@ -356,9 +358,7 @@
                         assignedHeroes: {}
                     },
                     campaignState: null, // This will hold the live campaign data
-                    hoveredNode: null, // To track which map node the mouse is over
-                    activePlaybook: null,
-                    vengeanceTarget: null
+                    hoveredNode: null // To track which map node the mouse is over
                 };
             }
 
@@ -587,96 +587,80 @@
                             }
                             this.state.player2Team = team;
                         } else if (this.state.difficulty === 'impossible') {
-                            this.state.activePlaybook = null;
-                            this.state.vengeanceTarget = null;
-                            const playerTeam = this.state.player1Team;
-                            const playerTeamIds = playerTeam.map(h => h.id).sort();
-
+                            this.state.vengeanceMode = false;
+                            const playerTeamIds = this.state.player1Team.map(h => h.id).sort();
                             try {
                                 const lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
-                                const pastDefeat = lossHistory.find(loss =>
-                                    JSON.stringify(loss.defeatedBy) === JSON.stringify(playerTeamIds)
-                                );
+                                const pastDefeat = lossHistory.find(loss => arraysEqual(loss.defeatedBy, playerTeamIds));
                                 if (pastDefeat) {
-                                    this.state.vengeanceTarget = pastDefeat.defeatedBy;
+                                    this.state.vengeanceMode = true;
                                     console.log("Impossible AI: Vengeance mode activated against this team!");
                                 }
                             } catch (e) {
                                 console.error("Could not parse loss history.", e);
                             }
 
+                            console.log("Impossible AI: Starting team selection.");
+                            const team = [];
+                            const pickedIds = new Set();
+                            const getPowerScore = (hero) => {
+                                let score = hero.hp + hero.ap;
+                                if (['firstStrike', 'soulSiphon', 'crush', 'unstableConcoction', 'galeForce'].includes(hero.abilityId)) score += 5;
+                                if (hero.abilityId === 'tank') score += 10;
 
-                            let team = [];
-                            let pickedIds = new Set();
-
-                            // Decide whether to use a playbook (30% chance in a 5v5 match)
-                            const eligiblePlaybooks = PLAYBOOKS.filter(p => p.teamSize === this.state.teamSize);
-                            if (eligiblePlaybooks.length > 0 && Math.random() < 0.3) {
-                                const playbook = eligiblePlaybooks[Math.floor(Math.random() * eligiblePlaybooks.length)];
-                                this.state.activePlaybook = playbook;
-                                console.log(`Impossible AI: Committing to playbook: ${playbook.name}`);
-
-                                // Add core hero
-                                const coreHero = remainingHeroes.find(h => h.id === playbook.coreHeroId);
-                                if (coreHero) {
-                                    team.push(coreHero);
-                                    pickedIds.add(coreHero.id);
+                                if (this.state.vengeanceMode) {
+                                    const counterBonus = 20; // A large bonus for a counter-pick
+                                    const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
+                                    this.state.player1Team.forEach(playerHero => {
+                                        if (hero.type === counterType[playerHero.type]) {
+                                            score += counterBonus;
+                                            console.log(`Vengeance mode: ${hero.name} gets +${counterBonus} for countering ${playerHero.name}`);
+                                        }
+                                    });
                                 }
 
-                                // Fill roles
-                                for (const role in playbook.roles) {
-                                    const roleInfo = playbook.roles[role];
-                                    const candidates = remainingHeroes.filter(h => !pickedIds.has(h.id) && roleInfo.heroes.includes(h.id));
-                                    // For now, just take the first available candidates. Could be improved with scoring.
-                                    for (let i = 0; i < roleInfo.count && candidates.length > 0; i++) {
-                                        const hero = candidates.shift();
-                                        team.push(hero);
-                                        pickedIds.add(hero.id);
+                                return score;
+                            };
+
+                            console.log("Impossible AI: Analyzing player team.");
+                            const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
+                            this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
+                            const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
+
+                            console.log("Impossible AI: Checking for Goblin synergy.");
+                            const availableGoblins = remainingHeroes.filter(h => h.name.includes('Goblin'));
+                            if (availableGoblins.length >= Math.min(3, this.state.teamSize)) {
+                                console.log("Impossible AI: Goblin synergy found. Selecting Goblin team.");
+                                this.state.player2Team = availableGoblins
+                                    .sort((a,b) => getPowerScore(b) - getPowerScore(a))
+                                    .slice(0, this.state.teamSize);
+                            } else {
+                                console.log("Impossible AI: No synergy found. Building counter-team.");
+                                const playerWeakness = Object.keys(playerTypes).sort((a, b) => playerTypes[b] - playerTypes[a])[0];
+                                const primaryCounterType = counterType[playerWeakness];
+
+                                const counterHeroes = remainingHeroes
+                                    .filter(h => h.type === primaryCounterType)
+                                    .sort((a, b) => getPowerScore(b) - getPowerScore(a));
+
+                                while (team.length < this.state.teamSize && counterHeroes.length > 0) {
+                                    const hero = counterHeroes.shift();
+                                    team.push(hero);
+                                    pickedIds.add(hero.id);
+                                }
+
+                                if (team.length < this.state.teamSize) {
+                                    console.log("Impossible AI: Filling remaining slots with best heroes.");
+                                    const bestOfRest = remainingHeroes
+                                        .filter(h => !pickedIds.has(h.id))
+                                        .sort((a, b) => getPowerScore(b) - getPowerScore(a));
+
+                                    while (team.length < this.state.teamSize && bestOfRest.length > 0) {
+                                        team.push(bestOfRest.shift());
                                     }
                                 }
+                                this.state.player2Team = team;
                             }
-
-                            // If no playbook was used or it couldn't be filled, use the scoring logic
-                            if (team.length < this.state.teamSize) {
-                                if (this.state.activePlaybook) {
-                                     console.log("Impossible AI: Playbook team incomplete, filling remaining slots with best available heroes.");
-                                } else {
-                                     console.log("Impossible AI: No playbook selected. Using standard smart selection.");
-                                }
-                                this.state.activePlaybook = null; // Invalidate playbook if it wasn't filled
-
-                                const getHeroScore = (hero, pTeam, allHeroes, isVengeance) => {
-                                    let score = hero.hp + hero.ap; // Base stat score
-                                    const abilityScores = { 'tank': 15, 'fireball': 12, 'crush': 10, 'galeForce': 8, 'firstStrike': 7, 'soulSiphon': 7, 'unstableConcoction': 6, 'lastStand': 5, 'longBow': 5, 'bleed': 4 };
-                                    if (abilityScores[hero.abilityId]) score += abilityScores[hero.abilityId];
-
-                                    // Vengeance mode dramatically increases the value of a good counter-pick.
-                                    const counterBonus = isVengeance ? 15 : 6;
-                                    if (isVengeance) console.log(`Vengeance mode: Applying ${counterBonus} counter bonus.`);
-                                    pTeam.forEach(playerHero => { if (hero.type === { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' }[playerHero.type]) score += counterBonus; });
-
-                                    if (hero.name.includes('Goblin')) score += allHeroes.filter(h => h.name.includes('Goblin') && h.id !== hero.id).length * 2.5;
-                                    const playerAbilities = pTeam.map(h => h.abilityId);
-                                    if (hero.abilityId === 'crush' && playerAbilities.includes('tank')) score += 20;
-                                    if ((hero.abilityId === 'unstableConcoction' || hero.abilityId === 'fireball') && playerAbilities.includes('tank')) score += 12;
-                                    if (playerAbilities.includes('fireball') && (hero.ap >= 8 || hero.abilityId === 'firstStrike' || hero.abilityId === 'chaosBolt')) score += 10;
-                                    return Math.round(score);
-                                };
-
-                                const unpickedHeroes = remainingHeroes.filter(h => !pickedIds.has(h.id));
-                                const scoredHeroes = unpickedHeroes.map(hero => ({
-                                    hero: hero,
-                                    score: getHeroScore(hero, playerTeam, unpickedHeroes, !!this.state.vengeanceTarget)
-                                }));
-                                scoredHeroes.sort((a, b) => b.score - a.score);
-
-                                while (team.length < this.state.teamSize && scoredHeroes.length > 0) {
-                                    const bestHero = scoredHeroes.shift().hero;
-                                    team.push(bestHero);
-                                }
-                            }
-
-                            this.state.player2Team = team;
                             console.log("Impossible AI: Team selection complete.");
                         } else { // 'normal' - AI tries to build a balanced team
                             const might = remainingHeroes.filter(h => h.type === 'Might');
@@ -2414,54 +2398,39 @@
                     } else if (this.state.difficulty === 'impossible') {
                         // Impossible AI: a more ruthless version of expert. No randomness.
                         // It calculates a "threat score" for each hero to make decisions.
-                        const getThreatScore = (hero, currentRound, activePlaybook = null) => {
+                        const getThreatScore = (hero) => {
                             let score = hero.hp + hero.ap;
-
-                            const abilityThreats = { 'tank': 1.6, 'galeForce': 1.5, 'soulSiphon': 1.5, 'crush': 1.4, 'firstStrike': 1.3 };
-                            if (abilityThreats[hero.abilityId]) score *= abilityThreats[hero.abilityId];
-
-                            if (hero.abilityId === 'fireball' && currentRound < 5) {
-                                const threatMultiplier = 1.2 + (currentRound * 0.2);
-                                score *= threatMultiplier;
+                            if (['fireball', 'tank', 'galeForce', 'soulSiphon'].includes(hero.abilityId)) {
+                                score *= 1.5; // These abilities are game-changing.
                             }
-
-                            if (hero.name.includes('Goblin')) score *= 1.2;
-
-                            // If a playbook is active, dramatically increase the value of the core hero.
-                            if (activePlaybook && hero.id === activePlaybook.coreHeroId) {
-                                score *= 5; // This makes the hero extremely valuable and worth protecting.
-                                console.log(`AI Playbook: Protecting core hero ${hero.name} with boosted threat score.`);
+                            if (hero.name.includes('Goblin')) {
+                                score *= 1.2; // Goblins are part of a key synergy.
                             }
-
                             return score;
                         };
 
                         console.log("Impossible AI: Starting clash resolution.");
-                        if (this.state.activePlaybook) console.log(`Impossible AI: Executing playbook: ${this.state.activePlaybook.name}`);
                         let bestChoice = null;
                         let maxScore = -Infinity;
 
                         p2Team.forEach(opponent => {
                             const sim = this.advancedSimulateClash(p1, opponent);
                             let score = 0;
+                            // Base score: net health swing, but prioritize dealing damage.
+                            score += (sim.p2Dealt * 1.1) - sim.p1Dealt;
 
-                            const playerHeroThreat = getThreatScore(p1, this.state.round);
-                            score += playerHeroThreat * 0.5;
-
-                            score += (sim.p2Dealt * 1.2) - sim.p1Dealt;
-
+                            // Bonus for KOing the player's hero, weighted by their threat.
                             if (sim.p1FinalHp <= 0) {
-                                score += 1000 + playerHeroThreat;
+                                score += 1000 + getThreatScore(p1);
                             }
-
+                            // Penalty for losing its own hero, weighted by its value.
                             if (sim.p2FinalHp <= 0) {
-                                // Pass the active playbook to correctly assess the value of the hero being lost.
-                                score -= 1000 + getThreatScore(opponent, this.state.round, this.state.activePlaybook);
+                                score -= 1000 + getThreatScore(opponent);
                             }
-
+                            // Bonus for surviving with more HP
                             score += sim.p2FinalHp - opponent.hp;
 
-                            console.log(`Impossible AI: Simulating ${opponent.name} vs ${p1.name}. Clash Score: ${Math.round(score)}`);
+                            console.log(`Impossible AI: Simulating clash with ${opponent.name}. Score: ${score}`);
                             if (score > maxScore) {
                                 maxScore = score;
                                 bestChoice = opponent;
@@ -2470,8 +2439,9 @@
 
                         if (bestChoice) {
                             p2 = bestChoice;
-                            console.log(`Impossible AI: Chose ${p2.name} with score ${maxScore.toFixed(0)}.`);
+                            console.log(`Impossible AI: Chose ${p2.name} with score ${maxScore}.`);
                         } else {
+                            // This should not happen if p2Team is not empty, but as a fallback...
                             p2 = p2Team[0];
                             console.log(`Impossible AI: No best choice found, defaulting to ${p2.name}.`);
                         }
@@ -3031,23 +3001,23 @@
                 else if (!p2HasHeroes) this.state.winner = 'p1';
 
                 if (this.state.winner) {
-                    // --- AI Learning ---
                     if (this.state.winner === 'p1' && this.state.difficulty === 'impossible') {
                         try {
-                            const lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
-                            const losingTeam = this.state.player2Team.map(h => h.id).sort();
-                            lossHistory.push({
+                            let lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
+                            const lossRecord = {
                                 defeatedBy: this.state.player1Team.map(h => h.id).sort(),
-                                losingTeam: losingTeam
-                            });
+                                timestamp: new Date().toISOString()
+                            };
+                            lossHistory.push(lossRecord);
+                            if (lossHistory.length > 50) {
+                                lossHistory.shift();
+                            }
                             localStorage.setItem('trinityClashLosses', JSON.stringify(lossHistory));
-                            console.log('Impossible AI: Loss recorded to localStorage.');
-                        } catch (e) {
-                            console.error("Failed to save loss history:", e);
+                            console.log("Impossible AI: Loss recorded to localStorage.");
+                        } catch(e) {
+                            console.error("Failed to save loss history.", e);
                         }
                     }
-                    // --- End AI Learning ---
-
                     setTimeout(() => {
                         if (this.state.winner === 'p1' && this.state.difficulty === 'expert') {
                             this.state.gamePhase = 'expertVictory';
