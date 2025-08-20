@@ -629,13 +629,18 @@
 
                             console.log("Impossible AI: Checking for Goblin synergy.");
                             const availableGoblins = remainingHeroes.filter(h => h.name.includes('Goblin'));
-                            if (availableGoblins.length >= Math.min(3, this.state.teamSize)) {
+                            // Vengeance mode should override goblin synergy preference.
+                            if (!this.state.vengeanceMode && availableGoblins.length >= Math.min(3, this.state.teamSize)) {
                                 console.log("Impossible AI: Goblin synergy found. Selecting Goblin team.");
                                 this.state.player2Team = availableGoblins
                                     .sort((a,b) => getPowerScore(b) - getPowerScore(a))
                                     .slice(0, this.state.teamSize);
                             } else {
-                                console.log("Impossible AI: No synergy found. Building counter-team.");
+                                if (this.state.vengeanceMode) {
+                                    console.log("Impossible AI: Vengeance mode overrides synergy. Building dedicated counter-team.");
+                                } else {
+                                    console.log("Impossible AI: No synergy found. Building counter-team.");
+                                }
                                 const playerWeakness = Object.keys(playerTypes).sort((a, b) => playerTypes[b] - playerTypes[a])[0];
                                 const primaryCounterType = counterType[playerWeakness];
 
