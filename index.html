@@ -572,55 +572,68 @@
                             }
                             this.state.player2Team = team;
                         } else if (this.state.difficulty === 'impossible') {
-                            console.log("Impossible AI: Starting team selection.");
-                            const team = [];
-                            const pickedIds = new Set();
-                            const getPowerScore = (hero) => {
-                                let score = hero.hp + hero.ap;
-                                if (['firstStrike', 'soulSiphon', 'crush', 'unstableConcoction', 'galeForce'].includes(hero.abilityId)) score += 5;
-                                if (hero.abilityId === 'tank') score += 10;
-                                return score;
-                            };
+                            console.log("Impossible AI: Starting smart team selection.");
+                            const playerTeam = this.state.player1Team;
+                            const counterTypeMap = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
 
-                            console.log("Impossible AI: Analyzing player team.");
-                            const playerTypes = { Might: 0, Finesse: 0, Magic: 0 };
-                            this.state.player1Team.forEach(hero => playerTypes[hero.type]++);
-                            const counterType = { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' };
+                            const getHeroScore = (hero, pTeam, allHeroes) => {
+                                let score = hero.hp + hero.ap; // Base stat score
 
-                            console.log("Impossible AI: Checking for Goblin synergy.");
-                            const availableGoblins = remainingHeroes.filter(h => h.name.includes('Goblin'));
-                            if (availableGoblins.length >= Math.min(3, this.state.teamSize)) {
-                                console.log("Impossible AI: Goblin synergy found. Selecting Goblin team.");
-                                this.state.player2Team = availableGoblins
-                                    .sort((a,b) => getPowerScore(b) - getPowerScore(a))
-                                    .slice(0, this.state.teamSize);
-                            } else {
-                                console.log("Impossible AI: No synergy found. Building counter-team.");
-                                const playerWeakness = Object.keys(playerTypes).sort((a, b) => playerTypes[b] - playerTypes[a])[0];
-                                const primaryCounterType = counterType[playerWeakness];
-
-                                const counterHeroes = remainingHeroes
-                                    .filter(h => h.type === primaryCounterType)
-                                    .sort((a, b) => getPowerScore(b) - getPowerScore(a));
-
-                                while (team.length < this.state.teamSize && counterHeroes.length > 0) {
-                                    const hero = counterHeroes.shift();
-                                    team.push(hero);
-                                    pickedIds.add(hero.id);
+                                // 1. Powerful Ability Bonus
+                                const abilityScores = {
+                                    'tank': 15, 'fireball': 12, 'crush': 10, 'galeForce': 8,
+                                    'firstStrike': 7, 'soulSiphon': 7, 'unstableConcoction': 6,
+                                    'lastStand': 5, 'longBow': 5, 'bleed': 4
+                                };
+                                if (abilityScores[hero.abilityId]) {
+                                    score += abilityScores[hero.abilityId];
                                 }
 
-                                if (team.length < this.state.teamSize) {
-                                    console.log("Impossible AI: Filling remaining slots with best heroes.");
-                                    const bestOfRest = remainingHeroes
-                                        .filter(h => !pickedIds.has(h.id))
-                                        .sort((a, b) => getPowerScore(b) - getPowerScore(a));
+                                // 2. Type Advantage Score
+                                pTeam.forEach(playerHero => {
+                                    if (hero.type === counterTypeMap[playerHero.type]) {
+                                        score += 6; // Bonus for each hero this AI hero counters
+                                    }
+                                });
 
-                                    while (team.length < this.state.teamSize && bestOfRest.length > 0) {
-                                        team.push(bestOfRest.shift());
+                                // 3. Synergy Score (de-emphasized from before)
+                                if (hero.name.includes('Goblin')) {
+                                    const otherGoblinsInPool = allHeroes.filter(h => h.name.includes('Goblin') && h.id !== hero.id).length;
+                                    // Provide a smaller, scaling bonus for goblin synergy
+                                    score += otherGoblinsInPool * 2.5;
+                                }
+
+                                // 4. Specific Counter-Pick Score
+                                const playerAbilities = pTeam.map(h => h.abilityId);
+                                if (hero.abilityId === 'crush' && playerAbilities.includes('tank')) {
+                                    score += 20; // Massive bonus for being a direct counter to a tank
+                                }
+                                if ((hero.abilityId === 'unstableConcoction' || hero.abilityId === 'fireball') && playerAbilities.includes('tank')) {
+                                    score += 12; // AOE is good against tanks who clump damage
+                                }
+                                // Prioritize picking heroes that can eliminate a Fireball user
+                                if (playerAbilities.includes('fireball')) {
+                                    if (hero.ap >= 8 || hero.abilityId === 'firstStrike' || hero.abilityId === 'chaosBolt') {
+                                        score += 10;
                                     }
                                 }
-                                this.state.player2Team = team;
-                            }
+
+                                return Math.round(score);
+                            };
+
+                            // Score all remaining heroes
+                            const scoredHeroes = remainingHeroes.map(hero => ({
+                                hero: hero,
+                                score: getHeroScore(hero, playerTeam, remainingHeroes)
+                            }));
+
+                            // Sort by score and pick the best ones
+                            scoredHeroes.sort((a, b) => b.score - a.score);
+
+                            console.log("Impossible AI: Top 5 hero picks with scores:");
+                            scoredHeroes.slice(0, 5).forEach(h => console.log(`- ${h.hero.name}: ${h.score}`));
+
+                            this.state.player2Team = scoredHeroes.slice(0, this.state.teamSize).map(h => h.hero);
                             console.log("Impossible AI: Team selection complete.");
                         } else { // 'normal' - AI tries to build a balanced team
                             const might = remainingHeroes.filter(h => h.type === 'Might');
@@ -2358,14 +2371,32 @@
                     } else if (this.state.difficulty === 'impossible') {
                         // Impossible AI: a more ruthless version of expert. No randomness.
                         // It calculates a "threat score" for each hero to make decisions.
-                        const getThreatScore = (hero) => {
+                        const getThreatScore = (hero, currentRound) => {
                             let score = hero.hp + hero.ap;
-                            if (['fireball', 'tank', 'galeForce', 'soulSiphon'].includes(hero.abilityId)) {
-                                score *= 1.5; // These abilities are game-changing.
+
+                            // Base ability threat
+                            const abilityThreats = {
+                                'tank': 1.6, 'galeForce': 1.5, 'soulSiphon': 1.5, 'crush': 1.4, 'firstStrike': 1.3
+                            };
+                            if (abilityThreats[hero.abilityId]) {
+                                score *= abilityThreats[hero.abilityId];
                             }
+
+                            // Dynamic threat for Fireball
+                            if (hero.abilityId === 'fireball') {
+                                if (currentRound < 5) {
+                                    // Threat ramps up from 1.2 at R1 to 2.0 at R4
+                                    const threatMultiplier = 1.2 + (currentRound * 0.2);
+                                    score *= threatMultiplier;
+                                    console.log(`Fireball threat for ${hero.name} at round ${currentRound}: ${threatMultiplier.toFixed(2)}x`);
+                                }
+                            }
+
+                            // Synergy threat
                             if (hero.name.includes('Goblin')) {
-                                score *= 1.2; // Goblins are part of a key synergy.
+                                score *= 1.2;
                             }
+
                             return score;
                         };
 
@@ -2376,21 +2407,28 @@
                         p2Team.forEach(opponent => {
                             const sim = this.advancedSimulateClash(p1, opponent);
                             let score = 0;
-                            // Base score: net health swing, but prioritize dealing damage.
-                            score += (sim.p2Dealt * 1.1) - sim.p1Dealt;
 
-                            // Bonus for KOing the player's hero, weighted by their threat.
+                            // Strategic bonus for attacking a high-threat target
+                            const playerHeroThreat = getThreatScore(p1, this.state.round);
+                            score += playerHeroThreat * 0.5;
+
+                            // Net health swing, with emphasis on dealing damage
+                            score += (sim.p2Dealt * 1.2) - sim.p1Dealt;
+
+                            // Huge bonus for KOing the player's hero, weighted by their threat.
                             if (sim.p1FinalHp <= 0) {
-                                score += 1000 + getThreatScore(p1);
+                                score += 1000 + playerHeroThreat;
                             }
-                            // Penalty for losing its own hero, weighted by its value.
+
+                            // Huge penalty for losing its own hero, weighted by its value.
                             if (sim.p2FinalHp <= 0) {
-                                score -= 1000 + getThreatScore(opponent);
+                                score -= 1000 + getThreatScore(opponent, this.state.round);
                             }
+
                             // Bonus for surviving with more HP
                             score += sim.p2FinalHp - opponent.hp;
 
-                            console.log(`Impossible AI: Simulating clash with ${opponent.name}. Score: ${score}`);
+                            console.log(`Impossible AI: Simulating ${opponent.name} vs ${p1.name}. Clash Score: ${Math.round(score)}`);
                             if (score > maxScore) {
                                 maxScore = score;
                                 bestChoice = opponent;
@@ -2399,9 +2437,8 @@
 
                         if (bestChoice) {
                             p2 = bestChoice;
-                            console.log(`Impossible AI: Chose ${p2.name} with score ${maxScore}.`);
+                            console.log(`Impossible AI: Chose ${p2.name} with score ${maxScore.toFixed(0)}.`);
                         } else {
-                            // This should not happen if p2Team is not empty, but as a fallback...
                             p2 = p2Team[0];
                             console.log(`Impossible AI: No best choice found, defaulting to ${p2.name}.`);
                         }
