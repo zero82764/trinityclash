@@ -1,1 +1,53 @@
  INFO  Accepting connections at http://0.0.0.0:8000
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 110 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/sir_reginald.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 16 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/grak_the_crusher.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/boro_the_bulwark.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/skeleton_warrior.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/goblin_brawler.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/karn_the_barbed.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/goblin_brute.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 37 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 36 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 50 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 46 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 66 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 64 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/vex.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/kaelen.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 41 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/lyra_nightwind.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/skeleton_archer.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/goblin_cutpurse.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/seraphina.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 70 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 GET /images/zephyr_the_tempest.png
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 67 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 75 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 77 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 82 ms
+ HTTP  8/20/2025 10:35:26 PM 127.0.0.1 Returned 200 in 45 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/goblin_scout.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/goblin_assassin.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/elara.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/zoltan.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/master_theron.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/skeleton_mage.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 38 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 42 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 48 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 48 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/goblin_bomber.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 49 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 48 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 31 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/malachi_the_gambler.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/gyrion_the_trickster.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/jester_of_chaos.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 GET /images/minotaur.png
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 13 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 15 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 16 ms
+ HTTP  8/20/2025 10:35:27 PM 127.0.0.1 Returned 200 in 29 ms
