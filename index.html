@@ -1678,11 +1678,11 @@
             drawMainMenuScreen() {
                 // Draw the logo if it's loaded
                 if (this.logoImage) {
-                    const logoHeight = 200 * this.scale;
+                    const logoHeight = 300 * this.scale;
                     const logoWidth = (this.logoImage.width / this.logoImage.height) * logoHeight;
                     const x = (this.canvas.width - logoWidth) / 2;
                     // Position the logo above the center
-                    const y = this.canvas.height / 2 - logoHeight - (120 * this.scale);
+                    const y = this.canvas.height / 2 - logoHeight - (150 * this.scale);
                     this.ctx.drawImage(this.logoImage, x, y, logoWidth, logoHeight);
                 } else {
                     // Fallback to original text title if logo fails to load
@@ -1704,7 +1704,7 @@
                 const spacing = 25 * this.scale;
                 const totalHeight = menuItems.length * buttonHeight + (menuItems.length - 1) * spacing;
                 // Adjusted menu start Y to give the logo more space
-                const menuStartY = this.canvas.height / 2 - totalHeight / 2 + 80 * this.scale;
+                const menuStartY = this.canvas.height / 2 - totalHeight / 2 + 120 * this.scale;
 
                 menuItems.forEach((item, index) => {
                     const x = (this.canvas.width - buttonWidth) / 2;
