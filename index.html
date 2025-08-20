@@ -357,7 +357,8 @@
                     },
                     campaignState: null, // This will hold the live campaign data
                     hoveredNode: null, // To track which map node the mouse is over
-                    activePlaybook: null
+                    activePlaybook: null,
+                    vengeanceTarget: null
                 };
             }
 
@@ -587,7 +588,24 @@
                             this.state.player2Team = team;
                         } else if (this.state.difficulty === 'impossible') {
                             this.state.activePlaybook = null;
+                            this.state.vengeanceTarget = null;
                             const playerTeam = this.state.player1Team;
+                            const playerTeamIds = playerTeam.map(h => h.id).sort();
+
+                            try {
+                                const lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
+                                const pastDefeat = lossHistory.find(loss =>
+                                    JSON.stringify(loss.defeatedBy) === JSON.stringify(playerTeamIds)
+                                );
+                                if (pastDefeat) {
+                                    this.state.vengeanceTarget = pastDefeat.defeatedBy;
+                                    console.log("Impossible AI: Vengeance mode activated against this team!");
+                                }
+                            } catch (e) {
+                                console.error("Could not parse loss history.", e);
+                            }
+
+
                             let team = [];
                             let pickedIds = new Set();
 
@@ -627,11 +645,16 @@
                                 }
                                 this.state.activePlaybook = null; // Invalidate playbook if it wasn't filled
 
-                                const getHeroScore = (hero, pTeam, allHeroes) => {
+                                const getHeroScore = (hero, pTeam, allHeroes, isVengeance) => {
                                     let score = hero.hp + hero.ap; // Base stat score
                                     const abilityScores = { 'tank': 15, 'fireball': 12, 'crush': 10, 'galeForce': 8, 'firstStrike': 7, 'soulSiphon': 7, 'unstableConcoction': 6, 'lastStand': 5, 'longBow': 5, 'bleed': 4 };
                                     if (abilityScores[hero.abilityId]) score += abilityScores[hero.abilityId];
-                                    pTeam.forEach(playerHero => { if (hero.type === { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' }[playerHero.type]) score += 6; });
+
+                                    // Vengeance mode dramatically increases the value of a good counter-pick.
+                                    const counterBonus = isVengeance ? 15 : 6;
+                                    if (isVengeance) console.log(`Vengeance mode: Applying ${counterBonus} counter bonus.`);
+                                    pTeam.forEach(playerHero => { if (hero.type === { Might: 'Magic', Finesse: 'Might', Magic: 'Finesse' }[playerHero.type]) score += counterBonus; });
+
                                     if (hero.name.includes('Goblin')) score += allHeroes.filter(h => h.name.includes('Goblin') && h.id !== hero.id).length * 2.5;
                                     const playerAbilities = pTeam.map(h => h.abilityId);
                                     if (hero.abilityId === 'crush' && playerAbilities.includes('tank')) score += 20;
@@ -641,7 +664,10 @@
                                 };
 
                                 const unpickedHeroes = remainingHeroes.filter(h => !pickedIds.has(h.id));
-                                const scoredHeroes = unpickedHeroes.map(hero => ({ hero: hero, score: getHeroScore(hero, playerTeam, unpickedHeroes) }));
+                                const scoredHeroes = unpickedHeroes.map(hero => ({
+                                    hero: hero,
+                                    score: getHeroScore(hero, playerTeam, unpickedHeroes, !!this.state.vengeanceTarget)
+                                }));
                                 scoredHeroes.sort((a, b) => b.score - a.score);
 
                                 while (team.length < this.state.teamSize && scoredHeroes.length > 0) {
@@ -3005,6 +3031,23 @@
                 else if (!p2HasHeroes) this.state.winner = 'p1';
 
                 if (this.state.winner) {
+                    // --- AI Learning ---
+                    if (this.state.winner === 'p1' && this.state.difficulty === 'impossible') {
+                        try {
+                            const lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
+                            const losingTeam = this.state.player2Team.map(h => h.id).sort();
+                            lossHistory.push({
+                                defeatedBy: this.state.player1Team.map(h => h.id).sort(),
+                                losingTeam: losingTeam
+                            });
+                            localStorage.setItem('trinityClashLosses', JSON.stringify(lossHistory));
+                            console.log('Impossible AI: Loss recorded to localStorage.');
+                        } catch (e) {
+                            console.error("Failed to save loss history:", e);
+                        }
+                    }
+                    // --- End AI Learning ---
+
                     setTimeout(() => {
                         if (this.state.winner === 'p1' && this.state.difficulty === 'expert') {
                             this.state.gamePhase = 'expertVictory';
