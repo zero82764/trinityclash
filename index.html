@@ -347,6 +347,7 @@
                     nextUUID: 1, // Unique ID counter for hero instances
                     isCampaignBattle: false,
                     vengeanceMode: false,
+                    vengeanceSurvivors: null,
                     citadel: {
                         resources: { gold: 100, stone: 50, dust: 20 },
                         buildings: {
@@ -595,6 +596,10 @@
                                 if (pastDefeat) {
                                     this.state.vengeanceMode = true;
                                     console.log("Impossible AI: Vengeance mode activated against this team!");
+                                    if (pastDefeat.survivors) {
+                                        this.state.vengeanceSurvivors = pastDefeat.survivors;
+                                        console.log("Impossible AI: Prioritizing survivors from last defeat:", pastDefeat.survivors);
+                                    }
                                 }
                             } catch (e) {
                                 console.error("Could not parse loss history.", e);
@@ -2411,6 +2416,11 @@
                             if (hero.name.includes('Goblin')) {
                                 score *= 1.2; // Goblins are part of a key synergy.
                             }
+                            // Vengeance Mode: Prioritize heroes that survived the last encounter.
+                            if (this.state.vengeanceMode && this.state.vengeanceSurvivors && this.state.vengeanceSurvivors.includes(hero.id)) {
+                                score *= 2; // Double the threat score for survivors.
+                                console.log(`Vengeance mode: ${hero.name} is a priority target (survivor).`);
+                            }
                             return score;
                         };
 
@@ -3009,8 +3019,10 @@
                     if (this.state.winner === 'p1' && this.state.difficulty === 'impossible') {
                         try {
                             let lossHistory = JSON.parse(localStorage.getItem('trinityClashLosses') || '[]');
+                            const survivingPlayerHeroes = this.state.player1Team.filter(h => h.hp > 0).map(h => h.id);
                             const lossRecord = {
                                 defeatedBy: this.state.player1Team.map(h => h.id).sort(),
+                                survivors: survivingPlayerHeroes,
                                 timestamp: new Date().toISOString()
                             };
                             lossHistory.push(lossRecord);
