@@ -140,7 +140,7 @@
         ];
 
         const BOSSES = [
-            { id: 100, name: 'Minotaur', type: 'Might', hp: 50, ap: 5, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
+            { id: 100, name: 'Minotaur', type: 'Might', hp: 40, ap: 4, abilities: ['cleave', 'ram', 'intimidation'], description: 'A fearsome beast with devastating attacks.' }
         ];
 
         const TRAITS = ['Aggressive', 'Cautious', 'Pillager'];
@@ -2366,7 +2366,7 @@
                     if(p1Hitbox) this.state.abilityAnimations.push({ type: 'advantage', hitbox: p1Hitbox, color: COLORS.accent, progress: 0, speed: 0.05 });
                 } else if (p2HasAdvantage) {
                     p2Damage *= 2;
-                    if (p1.abilityId !== 'chaosBolt') {
+                    if (p1.abilityId !== 'chaosBolt' && p1.abilityId !== 'crush') {
                         p1Damage = Math.ceil(p1Damage / 2);
                     }
                     this.log([{ text: p2.name, color: COLORS[p2.type.toLowerCase()] }, { text: ' has the advantage!', color: COLORS.accent }]);
@@ -2433,11 +2433,21 @@
                 if (p2.abilityId === 'overload' && p2.hp > 0 && Math.random() < 0.5) this.handleOverload(p2, p1);
                 if (p1.abilityId === 'soulSiphon' && p2Target.hp <= 0 && p1.hp > 0 && !p1.soulSiphonUsed) {
                     const stats = HEROES.find(h => h.id === p2Target.id);
-                    if (stats) { p1.hp += stats.hp; this.log([{ text: p1.name, color: COLORS.magic }, { text: ` siphons ${stats.hp} life!`, color: COLORS.ability }]); p1.soulSiphonUsed = true; }
+                    if (stats) {
+                        p1.maxHp += stats.hp;
+                        p1.hp += stats.hp;
+                        this.log([{ text: p1.name, color: COLORS.magic }, { text: ` siphons ${stats.hp} life!`, color: COLORS.ability }]);
+                        p1.soulSiphonUsed = true;
+                    }
                 }
                 if (p2.abilityId === 'soulSiphon' && p1Target.hp <= 0 && p2.hp > 0 && !p2.soulSiphonUsed) {
                     const stats = HEROES.find(h => h.id === p1Target.id);
-                    if (stats) { p2.hp += stats.hp; this.log([{ text: p2.name, color: COLORS.magic }, { text: ` siphons ${stats.hp} life!`, color: COLORS.ability }]); p2.soulSiphonUsed = true; }
+                    if (stats) {
+                        p2.maxHp += stats.hp;
+                        p2.hp += stats.hp;
+                        this.log([{ text: p2.name, color: COLORS.magic }, { text: ` siphons ${stats.hp} life!`, color: COLORS.ability }]);
+                        p2.soulSiphonUsed = true;
+                    }
                 }
                 this.checkGameOver();
             }
@@ -2918,7 +2928,7 @@
         //  ▶️ 3. INITIALIZE
         // ===================================
         window.onload = () => {
-            const game = new Game('gameCanvas');
+            window.game = new Game('gameCanvas');
         };
     </script>
 </body>
