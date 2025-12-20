@@ -2656,7 +2656,6 @@
             }
 
             checkGameOver() {
-                // BUG FIX: Prevent multiple game over screens by checking if a winner is already set
                 if (this.state.winner) return true;
 
                 const p1HasHeroes = this.state.player1Team.some(h => h.hp > 0);
