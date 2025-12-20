@@ -258,7 +258,7 @@
 
             handleLongPress(x, y) {
                 // Check if we are in a state that supports inspecting
-                if (['playing', 'bossBattle'].includes(this.state.gamePhase)) {
+                if (['playing', 'bossBattle', 'heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
                     let foundHero = null;
                     const checkHitboxes = (hitboxes) => {
                         for (const hitbox of hitboxes) {
@@ -268,8 +268,13 @@
                             }
                         }
                     };
-                    checkHitboxes(this.cardHitboxes.player1);
-                    if (!foundHero) checkHitboxes(this.cardHitboxes.player2);
+
+                    if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
+                        checkHitboxes(this.cardHitboxes.selection);
+                    } else {
+                        checkHitboxes(this.cardHitboxes.player1);
+                        if (!foundHero) checkHitboxes(this.cardHitboxes.player2);
+                    }
 
                     if (foundHero) {
                         this.state.expandedHero = foundHero;
@@ -1053,11 +1058,16 @@
                 let showFullDetails = showDetailsOverride;
                 if (playerKey === 'viewer' || playerKey === 'tooltip' || playerKey === 'modal') {
                     showFullDetails = true;
-                } else if (playerKey === 'player1' || playerKey === 'player2') {
-                    // In battle, check if hovered
-                     if (this.state.hoveredHero && this.state.hoveredHero.hero.uuid === hero.uuid) {
-                        showFullDetails = true;
-                     }
+                } else if (['player1', 'player2', 'heroSelection', 'practiceSelection'].includes(playerKey)) {
+                    // In battle or selection, check if hovered
+                    // Use ID for selection (as objects are recreated) and UUID for battle
+                    if (this.state.hoveredHero) {
+                        if (['heroSelection', 'practiceSelection'].includes(playerKey)) {
+                            if (this.state.hoveredHero.hero.id === hero.id) showFullDetails = true;
+                        } else {
+                            if (this.state.hoveredHero.hero.uuid === hero.uuid) showFullDetails = true;
+                        }
+                    }
                 }
 
                 if (showFullDetails) {
@@ -1716,14 +1726,41 @@
                 const bottomMargin = 150 * this.scale;
                 const availableHeight = this.canvas.height - topMargin - bottomMargin;
                 const startY = topMargin + (availableHeight - gridHeight) / 2;
+
+                // Guide Text
+                this.ctx.fillStyle = COLORS.info;
+                this.ctx.font = `italic ${16 * this.scale}px 'MedievalSharp'`;
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText("Right-click or Long-press for details", this.canvas.width - 20 * this.scale, this.canvas.height - 10 * this.scale);
+
                 this.cardHitboxes.selection = [];
                 allHeroes.forEach((hero, index) => {
                     const col = index % cardsPerRow;
                     const row = Math.floor(index / cardsPerRow);
-                    const x = startX + col * (cardWidth + spacing);
-                    const y = startY + row * (cardHeight + rowSpacing);
-                    this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
-                    this.drawCard(x, y, hero, 'heroSelection');
+                    let x = startX + col * (cardWidth + spacing);
+                    let y = startY + row * (cardHeight + rowSpacing);
+                    let drawScale = 1;
+
+                    // Hover Pop Effect
+                    if (this.state.hoveredHero && this.state.hoveredHero.hero.id === hero.id && !this.state.expandedHero) {
+                        const popScale = 1.1;
+                        const widthDiff = (cardWidth * popScale - cardWidth) / 2;
+                        const heightDiff = (cardHeight * popScale - cardHeight) / 2;
+                        x -= widthDiff;
+                        y -= heightDiff;
+                        drawScale = popScale;
+                    }
+
+                    // Store ORIGINAL hitbox coordinates for consistent clicking, or updated ones?
+                    // Usually better to store the drawn coordinates for accurate mouse interaction if it pops out.
+                    // But if it pops out, it might overlap neighbors.
+                    // For selection grid, standard behavior is usually fine.
+                    // Let's store the drawn coordinates.
+                    const drawnWidth = cardWidth * drawScale;
+                    const drawnHeight = cardHeight * drawScale;
+
+                    this.cardHitboxes.selection.push({ x, y, width: drawnWidth, height: drawnHeight, hero });
+                    this.drawCard(x, y, hero, 'heroSelection', [], drawScale);
                 });
                 if (this.state.player1Team.length === this.state.teamSize) {
                     const buttonWidth = 300 * this.scale;
@@ -1761,14 +1798,36 @@
                 const bottomMargin = 150 * this.scale;
                 const availableHeight = this.canvas.height - topMargin - bottomMargin;
                 const startY = topMargin + (availableHeight - gridHeight) / 2;
+
+                // Guide Text
+                this.ctx.fillStyle = COLORS.info;
+                this.ctx.font = `italic ${16 * this.scale}px 'MedievalSharp'`;
+                this.ctx.textAlign = 'right';
+                this.ctx.fillText("Right-click or Long-press for details", this.canvas.width - 20 * this.scale, this.canvas.height - 10 * this.scale);
+
                 this.cardHitboxes.selection = [];
                 allHeroes.forEach((hero, index) => {
                     const col = index % cardsPerRow;
                     const row = Math.floor(index / cardsPerRow);
-                    const x = startX + col * (cardWidth + spacing);
-                    const y = startY + row * (cardHeight + rowSpacing);
-                    this.cardHitboxes.selection.push({ x, y, width: cardWidth, height: cardHeight, hero });
-                    this.drawCard(x, y, hero, 'practiceSelection');
+                    let x = startX + col * (cardWidth + spacing);
+                    let y = startY + row * (cardHeight + rowSpacing);
+                    let drawScale = 1;
+
+                    // Hover Pop Effect
+                    if (this.state.hoveredHero && this.state.hoveredHero.hero.id === hero.id && !this.state.expandedHero) {
+                        const popScale = 1.1;
+                        const widthDiff = (cardWidth * popScale - cardWidth) / 2;
+                        const heightDiff = (cardHeight * popScale - cardHeight) / 2;
+                        x -= widthDiff;
+                        y -= heightDiff;
+                        drawScale = popScale;
+                    }
+
+                    const drawnWidth = cardWidth * drawScale;
+                    const drawnHeight = cardHeight * drawScale;
+
+                    this.cardHitboxes.selection.push({ x, y, width: drawnWidth, height: drawnHeight, hero });
+                    this.drawCard(x, y, hero, 'practiceSelection', [], drawScale);
                 });
                 if (team.length === this.state.teamSize) {
                     const buttonWidth = 300 * this.scale;
