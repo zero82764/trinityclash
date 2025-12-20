@@ -1,1 +1,491 @@
- INFO  Accepting connections at http://0.0.0.0:8000
+
+> start
+> ./node_modules/.bin/serve -l 8000
+
+ INFO  Accepting connections at http://localhost:8000
+ HTTP  12/20/2025 7:18:43 PM ::1 GET /
+ HTTP  12/20/2025 7:18:43 PM ::1 Returned 200 in 346 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 15 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 53 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 11 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 13 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 15 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 13 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 13 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 13 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:18:46 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:18:46 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 6 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 11 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:19:14 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:19:14 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:17 PM ::1 GET /
+ HTTP  12/20/2025 7:23:17 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 6 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:23:18 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:18 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 5 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 7 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:35 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:23:35 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:23:39 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:23:39 PM ::1 Returned 200 in 0 ms
+ HTTP  12/20/2025 7:24:46 PM ::1 GET /
+ HTTP  12/20/2025 7:24:46 PM ::1 Returned 200 in 53 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 15 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 7 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 7 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 6 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 22 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 22 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:47 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 24 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 4 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 6 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 7 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:24:50 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 14 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 15 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 13 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 12 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 10 ms
+ HTTP  12/20/2025 7:24:50 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 6 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:25:22 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:22 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:25 PM ::1 GET /
+ HTTP  12/20/2025 7:25:25 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/logo.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/sir_reginald.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/grak_the_crusher.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/boro_the_bulwark.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/skeleton_warrior.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_brawler.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 3 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/karn_the_barbed.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_brute.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/vex.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/kaelen.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/lyra_nightwind.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 8 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 9 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/skeleton_archer.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_cutpurse.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/seraphina.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/zephyr_the_tempest.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_scout.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_assassin.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/elara.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/zoltan.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/master_theron.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/skeleton_mage.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/goblin_bomber.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/malachi_the_gambler.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/gyrion_the_trickster.png
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/jester_of_chaos.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 2 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
+ HTTP  12/20/2025 7:25:26 PM ::1 GET /images/minotaur.png
+ HTTP  12/20/2025 7:25:26 PM ::1 Returned 200 in 1 ms
