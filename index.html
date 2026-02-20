@@ -1115,7 +1115,7 @@
 
                 // --- BOTTOM PANEL (Dark Backing) ---
                 // Covers the bottom 45% of the card for readability
-                const panelHeight = cardHeight * 0.45;
+                const panelHeight = cardHeight * 0.55;
                 const panelY = y + cardHeight - panelHeight;
                 const panelGradient = this.ctx.createLinearGradient(x, panelY, x, y + cardHeight);
                 panelGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
@@ -1139,7 +1139,7 @@
                 this.drawDynamicText(hero.name, centerX, y + padding + (10 * this.scale * customScale), cardWidth - padding * 2, 24 * customScale);
 
                 // Stats Icons & Values
-                const statY = y + cardHeight - padding - (55 * this.scale * customScale);
+                const statY = y + cardHeight - padding - (30 * this.scale * customScale);
                 const iconStatSize = 24 * this.scale * customScale;
                 this.drawHeartIcon(x + padding, statY, iconStatSize, iconStatSize);
                 this.drawAPSwordIcon(x + cardWidth - padding - iconStatSize, statY, iconStatSize, iconStatSize);
@@ -1179,12 +1179,12 @@
                     if (playerKey === 'viewer' || playerKey === 'tooltip' || playerKey === 'modal') {
                         descriptionToDraw = hero.detailedDescription || hero.description;
                     }
-                    this.wrapText(descriptionToDraw || '', centerX, y + cardHeight - (85 * this.scale * customScale), cardWidth - padding * 1.5, 15 * this.scale * customScale);
+                    this.wrapText(descriptionToDraw || '', centerX, y + cardHeight - (110 * this.scale * customScale), cardWidth - padding * 1.5, 15 * this.scale * customScale);
                 } else {
                     // Ability Name (Dynamic Sizing)
                      this.ctx.fillStyle = COLORS.ability;
                      // Use drawDynamicText for Ability Name
-                     this.drawDynamicText(hero.abilityName || 'Ability', centerX, y + cardHeight - (70 * this.scale * customScale), cardWidth - padding * 2, 18 * customScale);
+                     this.drawDynamicText(hero.abilityName || 'Ability', centerX, y + cardHeight - (110 * this.scale * customScale), cardWidth - padding * 2, 18 * customScale);
                 }
 
                 if (hero.statusEffects && hero.statusEffects.length > 0) {
