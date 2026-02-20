@@ -1,77 +1,54 @@
-const { chromium, devices } = require('playwright');
+const { chromium } = require('playwright');
+const path = require('path');
 
 (async () => {
-    const browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
 
-    try {
-        console.log('Navigating to http://localhost:8000');
-        await page.goto('http://localhost:8000', { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(2000);
+  // Load local file
+  const filePath = 'file://' + path.resolve('index.html');
+  await page.goto(filePath);
 
-        // Click "Quick Match"
-        const coords = await page.evaluate(() => {
-            const btn = window.game.buttonHitboxes['quickmatch'];
-            return btn ? { x: btn.x + btn.width / 2, y: btn.y + btn.height / 2 } : null;
-        });
+  // Wait for game to initialize and load assets
+  await page.waitForFunction(() => window.game && window.game.imagesLoaded);
 
-        if (coords) {
-            console.log('Clicking Quick Match...');
-            await page.mouse.click(coords.x, coords.y);
-            await page.waitForTimeout(1000);
-        }
+  // Helper to click a button by key
+  const clickButton = async (key) => {
+    const hitbox = await page.evaluate((k) => window.game.buttonHitboxes[k], key);
+    if (!hitbox) throw new Error(`Button ${key} not found`);
+    await page.mouse.click(hitbox.x + hitbox.width / 2, hitbox.y + hitbox.height / 2);
+    // Wait a bit for state transition/animation
+    await page.waitForTimeout(500);
+  };
 
-        // Click "3v3 Clash"
-        const coords3v3 = await page.evaluate(() => {
-            const btn = window.game.buttonHitboxes['3v3clash'];
-            return btn ? { x: btn.x + btn.width / 2, y: btn.y + btn.height / 2 } : null;
-        });
+  // Navigate to Hero Selection
+  console.log('Clicking Quick Match...');
+  await clickButton('quickmatch');
 
-         if (coords3v3) {
-            console.log('Clicking 3v3 Clash...');
-            await page.mouse.click(coords3v3.x, coords3v3.y);
-            await page.waitForTimeout(1000);
-        }
+  console.log('Clicking 3v3 Clash...');
+  await clickButton('3v3clash');
 
-        // Click "Normal" Difficulty
-        const coordsNormal = await page.evaluate(() => {
-            const btn = window.game.buttonHitboxes['normal'];
-            return btn ? { x: btn.x + btn.width / 2, y: btn.y + btn.height / 2 } : null;
-        });
+  console.log('Clicking Normal Difficulty...');
+  await clickButton('normal');
 
-        if (coordsNormal) {
-            console.log('Clicking Normal Difficulty...');
-            await page.mouse.click(coordsNormal.x, coordsNormal.y);
-            await page.waitForTimeout(1000);
-        }
+  // We are now in Hero Selection
+  console.log('Hovering over first hero...');
+  const firstCard = await page.evaluate(() => window.game.cardHitboxes.selection[0]);
+  if (!firstCard) throw new Error('No hero cards found');
 
-        // --- HERO SELECTION SCREEN ---
-        // 1. Initial State Screenshot (Should show "Ability Name" only)
-        console.log('Taking screenshot of Hero Selection (Initial)...');
-        await page.screenshot({ path: 'verification/hero_selection_initial.png' });
+  // Move mouse to center of card to trigger hover
+  const hoverX = firstCard.x + firstCard.width / 2;
+  const hoverY = firstCard.y + firstCard.height / 2;
+  await page.mouse.move(hoverX, hoverY);
 
-        // 2. Hover over first hero
-        const firstHeroPos = await page.evaluate(() => {
-            if (window.game.cardHitboxes.selection.length > 0) {
-                 const card = window.game.cardHitboxes.selection[0];
-                 return { x: card.x + card.width / 2, y: card.y + card.height / 2 };
-            }
-            return null;
-        });
+  // Wait for lerp animation (currentScale -> 1.1)
+  // Lerp is 0.15 per frame. 60fps. Should be fast. 500ms is plenty.
+  await page.waitForTimeout(1000);
 
-        if (firstHeroPos) {
-            console.log('Hovering over first hero...');
-            await page.mouse.move(firstHeroPos.x, firstHeroPos.y);
-            await page.waitForTimeout(500); // Wait for hover
+  // Take screenshot
+  console.log('Taking screenshot...');
+  await page.screenshot({ path: 'verification_ui.png' });
 
-            // 3. Hover State Screenshot (Should show "Pop out" and "Description")
-            console.log('Taking screenshot of Hero Selection (Hover)...');
-            await page.screenshot({ path: 'verification/hero_selection_hover.png' });
-        }
-
-    } catch (error) {
-        console.error("Error running test:", error);
-    } finally {
-        await browser.close();
-    }
+  await browser.close();
+  console.log('Done.');
 })();
