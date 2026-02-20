@@ -332,6 +332,13 @@
             }
 
             getInitialState() {
+                // Initialize persistent selection heroes with animation state
+                const selectionHeroes = JSON.parse(JSON.stringify(HEROES));
+                selectionHeroes.forEach(h => {
+                    h.currentScale = 1.0;
+                    h.targetScale = 1.0;
+                });
+
                 return {
                     gamePhase: 'mainMenu',
                     difficulty: 'normal',
@@ -351,6 +358,7 @@
                     heroViewerIndex: 0,
                     practiceSelectionState: 'player',
                     hoveredHero: null,
+                    selectionHeroes: selectionHeroes, // Persistent state for selection screen
                     abilityAnimations: [],
                     battleLog: [[]],
                     battleLogScrollOffset: 0,
@@ -377,6 +385,8 @@
                     hero.statusEffects = [];
                     hero.teamKey = teamKey;
                     hero.evasionUsed = false; // For Goblin Scout
+                    hero.currentScale = 1.0;
+                    hero.targetScale = 1.0;
 
                     // Calculate Max HP for abilities like Toughness
                     let maxHp = hero.hp;
@@ -677,6 +687,20 @@
                 this.state.abilityAnimations.forEach(anim => anim.progress += anim.speed * speedMultiplier);
                 this.state.abilityAnimations = this.state.abilityAnimations.filter(anim => anim.progress < 1);
 
+                // Update scale for all potential hero lists
+                const allActiveHeroes = [
+                    ...this.state.player1Team,
+                    ...this.state.player2Team,
+                    ...(this.state.selectionHeroes || [])
+                ];
+
+                allActiveHeroes.forEach(hero => {
+                    if (hero.currentScale !== undefined && hero.targetScale !== undefined) {
+                        // Lerp factor 0.15 for smooth but snappy hover
+                        hero.currentScale += (hero.targetScale - hero.currentScale) * 0.15;
+                    }
+                });
+
                 this.state.player1Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
                 this.state.player2Team.forEach(hero => this.updateHeroAnimation(hero, speedMultiplier));
 
@@ -795,6 +819,34 @@
                     }
                 }
                 this.ctx.fillText(line, x, y);
+            }
+
+            drawDynamicText(text, x, y, maxWidth, initialFontSize, fontFamily = 'Cinzel') {
+                let fontSize = initialFontSize;
+                this.ctx.textAlign = 'center';
+
+                // Try to fit text by reducing font size
+                do {
+                    this.ctx.font = `bold ${fontSize * this.scale}px "${fontFamily}"`;
+                    const metrics = this.ctx.measureText(text);
+                    if (metrics.width <= maxWidth) {
+                        this.ctx.fillText(text, x, y);
+                        return;
+                    }
+                    fontSize--;
+                } while (fontSize >= 12);
+
+                // If still too long at 12px, truncate with ellipsis
+                this.ctx.font = `bold ${12 * this.scale}px "${fontFamily}"`;
+                let truncated = text;
+                while (truncated.length > 0) {
+                    truncated = truncated.slice(0, -1);
+                    if (this.ctx.measureText(truncated + '...').width <= maxWidth) {
+                        this.ctx.fillText(truncated + '...', x, y);
+                        return;
+                    }
+                }
+                this.ctx.fillText('...', x, y);
             }
 
             drawBattleLog() {
@@ -938,17 +990,18 @@
                     let drawY = y;
                     let drawScale = cardScaleFactor;
 
-                    // Hover Pop Effect (only if not expanded and not animating)
-                    if (this.state.hoveredHero && this.state.hoveredHero.hero.uuid === hero.uuid && !this.state.expandedHero) {
-                        const popScale = 1.1;
-                        const widthDiff = (cardWidth * popScale - cardWidth) / 2;
-                        const heightDiff = (cardHeight * popScale - cardHeight) / 2;
-                        x -= widthDiff;
-                        drawY -= heightDiff;
-                        drawScale *= popScale;
-                    }
+                    // Hover logic is now handled inside drawCard via currentScale
 
-                    const hitbox = { x, y, width: cardWidth, height: cardHeight, hero };
+                    // Calculate hitbox based on current scale to avoid flicker
+                    const currentScale = hero.currentScale || 1.0;
+                    const visualWidth = cardWidth * currentScale;
+                    const visualHeight = cardHeight * currentScale;
+                    const centerX = x + cardWidth / 2;
+                    const centerY = drawY + cardHeight / 2;
+                    const hitX = centerX - visualWidth / 2;
+                    const hitY = centerY - visualHeight / 2;
+
+                    const hitbox = { x: hitX, y: hitY, width: visualWidth, height: visualHeight, hero };
                     this.cardHitboxes[playerKey].push(hitbox);
                     const isAnimating = this.state.animation?.type === 'clash' &&
                                         (this.state.animation.p1.uuid === hero.uuid || this.state.animation.p2.uuid === hero.uuid);
@@ -966,32 +1019,38 @@
                 const cardWidth = this.baseCardWidth * this.scale * customScale;
                 const cardHeight = this.baseCardHeight * this.scale * customScale;
                 const padding = 15 * this.scale * customScale;
+                const centerX = x + cardWidth / 2;
+                const centerY = y + cardHeight / 2;
+
+                // --- TRANSFORMS (Translate, Rotate, Scale) ---
+                this.ctx.translate(centerX, centerY);
 
                 if (hero.deathAnimation) {
                     const progress = hero.deathAnimation.progress;
                     const angle = (Math.PI / 2) * progress;
-                    this.ctx.translate(x + cardWidth / 2, y + cardHeight / 2);
                     this.ctx.rotate(angle);
-                    this.ctx.translate(-(x + cardWidth / 2), -(y + cardHeight / 2));
                     this.ctx.globalAlpha = 1 - progress;
                 }
 
-                this.ctx.fillStyle = hero.hp > 0 ? COLORS[hero.type.toLowerCase()] : COLORS.disabled;
-                this.ctx.beginPath();
-                this.ctx.roundRect(x, y, cardWidth, cardHeight, [10 * this.scale * customScale]);
-                this.ctx.fill();
+                // Apply hover scale (default to 1.0)
+                const hoverScale = hero.currentScale || 1.0;
+                this.ctx.scale(hoverScale, hoverScale);
 
-                if (hero.hp > 0) {
-                    const gradient = this.ctx.createRadialGradient(
-                        x + cardWidth / 2, y + cardHeight / 2, 0,
-                        x + cardWidth / 2, y + cardHeight / 2, cardWidth * 0.8
-                    );
-                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.fill();
+                this.ctx.translate(-centerX, -centerY);
+
+
+                // --- SHADOWS ---
+                let shadowColor = 'black';
+                let shadowBlur = 10 * this.scale * customScale;
+
+                // Pulsing hover glow
+                if (hero.targetScale > 1.01) {
+                    const pulse = Math.sin(Date.now() / 200); // -1 to 1
+                    shadowColor = COLORS.accent;
+                    shadowBlur = (20 * this.scale * customScale) + (pulse * 5 * this.scale * customScale);
                 }
 
+                // Selection Glow (Overrides hover)
                 let isSelected = false;
                 if (this.state.gamePhase === 'heroSelection' || this.state.gamePhase === 'practiceSelection') {
                     const teamToCheck = this.state.gamePhase === 'heroSelection'
@@ -1004,25 +1063,44 @@
                 }
 
                 if (isSelected && hero.hp > 0 && playerKey !== 'tooltip') {
+                    shadowColor = COLORS.accent;
+                    shadowBlur = 20 * this.scale * customScale;
                     this.ctx.strokeStyle = COLORS.accent;
                     this.ctx.lineWidth = 6 * this.scale * customScale;
-                    this.ctx.shadowColor = COLORS.accent;
-                    this.ctx.shadowBlur = 20 * this.scale * customScale;
                 } else {
                     this.ctx.strokeStyle = COLORS.cardBorder;
                     this.ctx.lineWidth = 4 * this.scale * customScale;
                 }
+
+                this.ctx.shadowColor = shadowColor;
+                this.ctx.shadowBlur = shadowBlur;
+
+
+                // --- BACKGROUND ---
+                this.ctx.fillStyle = hero.hp > 0 ? COLORS[hero.type.toLowerCase()] : COLORS.disabled;
+                this.ctx.beginPath();
+                this.ctx.roundRect(x, y, cardWidth, cardHeight, [10 * this.scale * customScale]);
+                this.ctx.fill();
+
+                // Gloss Overlay
+                if (hero.hp > 0) {
+                    const gradient = this.ctx.createRadialGradient(
+                        centerX, centerY, 0,
+                        centerX, centerY, cardWidth * 0.8
+                    );
+                    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+                    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                }
+
                 this.ctx.stroke();
-                this.ctx.shadowBlur = 0;
+                this.ctx.shadowBlur = 0; // Reset shadow for internal elements
 
                 this.ctx.globalAlpha = hero.deathAnimation ? 1 - hero.deathAnimation.progress : 1;
 
-                this.ctx.fillStyle = COLORS.text;
-                this.ctx.textAlign = 'center';
-                this.ctx.font = `bold ${24 * this.scale * customScale}px 'Cinzel'`;
-                this.ctx.fillText(hero.name, x + cardWidth / 2, y + padding + (10 * this.scale * customScale));
 
-                // Draw Hero Image
+                // --- HERO IMAGE ---
                 const heroImage = this.heroImages[hero.id];
                 if (heroImage && heroImage.complete && heroImage.naturalHeight !== 0) {
                     const imagePadding = 20 * this.scale * customScale;
@@ -1034,6 +1112,33 @@
                     this.ctx.drawImage(heroImage, imageX, imageY, imageWidth, imageHeight);
                 }
 
+
+                // --- BOTTOM PANEL (Dark Backing) ---
+                // Covers the bottom 45% of the card for readability
+                const panelHeight = cardHeight * 0.45;
+                const panelY = y + cardHeight - panelHeight;
+                const panelGradient = this.ctx.createLinearGradient(x, panelY, x, y + cardHeight);
+                panelGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+                panelGradient.addColorStop(0.3, 'rgba(0, 0, 0, 0.7)');
+                panelGradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)');
+
+                this.ctx.save();
+                this.ctx.beginPath();
+                this.ctx.roundRect(x, y, cardWidth, cardHeight, [10 * this.scale * customScale]);
+                this.ctx.clip(); // Clip to card shape
+                this.ctx.fillStyle = panelGradient;
+                this.ctx.fillRect(x, panelY, cardWidth, panelHeight);
+                this.ctx.restore();
+
+
+                // --- TEXT & STATS ---
+
+                // Title (Dynamic Sizing)
+                this.ctx.fillStyle = COLORS.text;
+                // Positioned at top, usually over background color
+                this.drawDynamicText(hero.name, centerX, y + padding + (10 * this.scale * customScale), cardWidth - padding * 2, 24 * customScale);
+
+                // Stats Icons & Values
                 const statY = y + cardHeight - padding - (55 * this.scale * customScale);
                 const iconStatSize = 24 * this.scale * customScale;
                 this.drawHeartIcon(x + padding, statY, iconStatSize, iconStatSize);
@@ -1048,19 +1153,18 @@
 
                 this.ctx.textAlign = 'center';
 
-                // Draw Type Icon at bottom center
+                // Type Icon
                 const iconSize = 25 * this.scale * customScale;
-                this.drawTypeIcon(hero.type, x + cardWidth / 2, statY + iconSize * 0.7, iconSize);
+                this.drawTypeIcon(hero.type, centerX, statY + iconSize * 0.7, iconSize);
 
 
+                // Ability / Description
                 this.ctx.font = `italic ${14 * this.scale * customScale}px 'MedievalSharp'`;
 
                 let showFullDetails = showDetailsOverride;
                 if (playerKey === 'viewer' || playerKey === 'tooltip' || playerKey === 'modal') {
                     showFullDetails = true;
                 } else if (['player1', 'player2', 'heroSelection', 'practiceSelection'].includes(playerKey)) {
-                    // In battle or selection, check if hovered
-                    // Use ID for selection (as objects are recreated) and UUID for battle
                     if (this.state.hoveredHero) {
                         if (['heroSelection', 'practiceSelection'].includes(playerKey)) {
                             if (this.state.hoveredHero.hero.id === hero.id) showFullDetails = true;
@@ -1075,13 +1179,12 @@
                     if (playerKey === 'viewer' || playerKey === 'tooltip' || playerKey === 'modal') {
                         descriptionToDraw = hero.detailedDescription || hero.description;
                     }
-                     // Adjust description position to be below the image area
-                    this.wrapText(descriptionToDraw || '', x + cardWidth / 2, y + cardHeight - (85 * this.scale * customScale), cardWidth - padding * 1.5, 15 * this.scale * customScale);
+                    this.wrapText(descriptionToDraw || '', centerX, y + cardHeight - (85 * this.scale * customScale), cardWidth - padding * 1.5, 15 * this.scale * customScale);
                 } else {
-                    // Just show Ability Name
+                    // Ability Name (Dynamic Sizing)
                      this.ctx.fillStyle = COLORS.ability;
-                     this.ctx.font = `bold ${18 * this.scale * customScale}px 'Cinzel'`;
-                     this.ctx.fillText(hero.abilityName || 'Ability', x + cardWidth / 2, y + cardHeight - (70 * this.scale * customScale));
+                     // Use drawDynamicText for Ability Name
+                     this.drawDynamicText(hero.abilityName || 'Ability', centerX, y + cardHeight - (70 * this.scale * customScale), cardWidth - padding * 2, 18 * customScale);
                 }
 
                 if (hero.statusEffects && hero.statusEffects.length > 0) {
@@ -1708,7 +1811,7 @@
                 const cardWidth = this.baseCardWidth * this.scale;
                 const cardHeight = this.baseCardHeight * this.scale;
                 const spacing = 20 * this.scale;
-                const allHeroes = JSON.parse(JSON.stringify(HEROES));
+                const allHeroes = this.state.selectionHeroes || HEROES; // Use persistent state
 
                 this.ctx.fillStyle = COLORS.text;
                 this.ctx.textAlign = 'center';
@@ -1741,25 +1844,18 @@
                     let y = startY + row * (cardHeight + rowSpacing);
                     let drawScale = 1;
 
-                    // Hover Pop Effect
-                    if (this.state.hoveredHero && this.state.hoveredHero.hero.id === hero.id && !this.state.expandedHero) {
-                        const popScale = 1.1;
-                        const widthDiff = (cardWidth * popScale - cardWidth) / 2;
-                        const heightDiff = (cardHeight * popScale - cardHeight) / 2;
-                        x -= widthDiff;
-                        y -= heightDiff;
-                        drawScale = popScale;
-                    }
+                    // Hover logic is now handled inside drawCard via currentScale
 
-                    // Store ORIGINAL hitbox coordinates for consistent clicking, or updated ones?
-                    // Usually better to store the drawn coordinates for accurate mouse interaction if it pops out.
-                    // But if it pops out, it might overlap neighbors.
-                    // For selection grid, standard behavior is usually fine.
-                    // Let's store the drawn coordinates.
-                    const drawnWidth = cardWidth * drawScale;
-                    const drawnHeight = cardHeight * drawScale;
+                    // Calculate hitbox based on current scale
+                    const currentScale = hero.currentScale || 1.0;
+                    const visualWidth = cardWidth * currentScale;
+                    const visualHeight = cardHeight * currentScale;
+                    const centerX = x + cardWidth / 2;
+                    const centerY = y + cardHeight / 2;
+                    const hitX = centerX - visualWidth / 2;
+                    const hitY = centerY - visualHeight / 2;
 
-                    this.cardHitboxes.selection.push({ x, y, width: drawnWidth, height: drawnHeight, hero });
+                    this.cardHitboxes.selection.push({ x: hitX, y: hitY, width: visualWidth, height: visualHeight, hero });
                     this.drawCard(x, y, hero, 'heroSelection', [], drawScale);
                 });
                 if (this.state.player1Team.length === this.state.teamSize) {
@@ -1778,7 +1874,7 @@
                 const cardWidth = this.baseCardWidth * this.scale;
                 const cardHeight = this.baseCardHeight * this.scale;
                 const spacing = 20 * this.scale;
-                const allHeroes = JSON.parse(JSON.stringify(HEROES));
+                const allHeroes = this.state.selectionHeroes || HEROES; // Use persistent state
 
                 this.ctx.fillStyle = COLORS.text;
                 this.ctx.textAlign = 'center';
@@ -1813,20 +1909,18 @@
                     let y = startY + row * (cardHeight + rowSpacing);
                     let drawScale = 1;
 
-                    // Hover Pop Effect
-                    if (this.state.hoveredHero && this.state.hoveredHero.hero.id === hero.id && !this.state.expandedHero) {
-                        const popScale = 1.1;
-                        const widthDiff = (cardWidth * popScale - cardWidth) / 2;
-                        const heightDiff = (cardHeight * popScale - cardHeight) / 2;
-                        x -= widthDiff;
-                        y -= heightDiff;
-                        drawScale = popScale;
-                    }
+                    // Hover logic handled in drawCard
 
-                    const drawnWidth = cardWidth * drawScale;
-                    const drawnHeight = cardHeight * drawScale;
+                    // Calculate hitbox based on current scale
+                    const currentScale = hero.currentScale || 1.0;
+                    const visualWidth = cardWidth * currentScale;
+                    const visualHeight = cardHeight * currentScale;
+                    const centerX = x + cardWidth / 2;
+                    const centerY = y + cardHeight / 2;
+                    const hitX = centerX - visualWidth / 2;
+                    const hitY = centerY - visualHeight / 2;
 
-                    this.cardHitboxes.selection.push({ x, y, width: drawnWidth, height: drawnHeight, hero });
+                    this.cardHitboxes.selection.push({ x: hitX, y: hitY, width: visualWidth, height: visualHeight, hero });
                     this.drawCard(x, y, hero, 'practiceSelection', [], drawScale);
                 });
                 if (team.length === this.state.teamSize) {
@@ -2967,6 +3061,8 @@
                 this.state.hoveredHero = null;
                 this.state.hoveredNode = null;
 
+                if (this.state.expandedHero) return;
+
                 if (['heroSelection', 'practiceSelection', 'playing', 'bossBattle'].includes(this.state.gamePhase)) {
                     let foundHero = null;
                     const checkHitboxes = (hitboxes, team) => {
@@ -2984,6 +3080,22 @@
                         if (!foundHero) checkHitboxes(this.cardHitboxes.player2, this.state.player2Team);
                     }
                     this.state.hoveredHero = foundHero;
+
+                    // Update target scales based on hover
+                    const updateScales = (hitboxes) => {
+                        hitboxes.forEach(hb => {
+                            if (hb.hero) {
+                                hb.hero.targetScale = (foundHero && foundHero.hero === hb.hero) ? 1.1 : 1.0;
+                            }
+                        });
+                    };
+
+                    if (['heroSelection', 'practiceSelection'].includes(this.state.gamePhase)) {
+                        updateScales(this.cardHitboxes.selection);
+                    } else {
+                        updateScales(this.cardHitboxes.player1);
+                        updateScales(this.cardHitboxes.player2);
+                    }
                 }
             }
 
